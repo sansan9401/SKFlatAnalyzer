@@ -12,8 +12,14 @@ void ZptWeight::executeEvent(){
       if(abs(lhe_l0.ID())==11) p=MakeParameter("ee");
       else if(abs(lhe_l1.ID())==13) p=MakeParameter("mm");
       TLorentzVector genZ=(gen_l0+gen_l1);
-      FillHist(p.prefix+"gen_diptdirap",genZ.Pt(),fabs(genZ.Rapidity()),p.w.lumiweight*p.w.zptweight,ptbinnum,ptbin,rapbinnum,rapbin);
-      FillHist(p.prefix+"gen_diptdirap_nozptweight",genZ.Pt(),fabs(genZ.Rapidity()),p.w.lumiweight,ptbinnum,ptbin,rapbinnum,rapbin);
+      if(genZ.M()>80&&genZ.M()<100){
+	FillHist(p.prefix+"gen_diptdirap",genZ.Pt(),fabs(genZ.Rapidity()),p.w.lumiweight*p.w.zptweight,ptbinnum,ptbin,genrapbinnum,genrapbin);
+	FillHist(p.prefix+"gen_diptdirap_nozptweight",genZ.Pt(),fabs(genZ.Rapidity()),p.w.lumiweight,ptbinnum,ptbin,genrapbinnum,genrapbin);
+	FillHist(p.prefix+"gen_dipt2dirap",pow(genZ.Pt(),2),fabs(genZ.Rapidity()),p.w.lumiweight*p.w.zptweight,pt2binnum,pt2bin,genrapbinnum,genrapbin);
+	FillHist(p.prefix+"gen_dipt2dirap_nozptweight",pow(genZ.Pt(),2),fabs(genZ.Rapidity()),p.w.lumiweight,pt2binnum,pt2bin,genrapbinnum,genrapbin);
+      }
+      FillHist(p.prefix+"gen_diptdimass",genZ.Pt(),genZ.M(),p.w.lumiweight*p.w.zptweight,ptbinnum,ptbin,massbinnum,massbin);
+      FillHist(p.prefix+"gen_diptdimass_nozptweight",genZ.Pt(),genZ.M(),p.w.lumiweight,ptbinnum,ptbin,massbinnum,massbin);
     }
   }
 

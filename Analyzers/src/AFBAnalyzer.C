@@ -173,6 +173,22 @@ void AFBAnalyzer::FillHists(Parameter& p){
     map_weight["_noCFSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
     map_weight["_CFSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF_up;
     map_weight["_CFSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF_down;
+    /////// ZptTest /////////////
+    if(IsDYSample){
+      if(abs(lhe_l0.ID())==11||abs(lhe_l0.ID())==13){
+	TLorentzVector genZ=gen_l0+gen_l1;
+	double zpty0=GetZptWeight(genZ.Pt(),0,abs(lhe_l0.ID())==13?Lepton::Flavour::MUON:Lepton::Flavour::ELECTRON);
+	double scale=1.;
+	if(MCSample.Contains("MiNNLO")) scale=sqrt((1-0.00681*cosh(genZ.Rapidity()))/(1-0.00681));
+	else if(MCSample=="DYJets_MG") scale=sqrt(1-0.02363*genZ.Rapidity()*genZ.Rapidity());
+	else if(MCSample.Contains("DYJets")) scale=sqrt(1-0.02438*genZ.Rapidity()*genZ.Rapidity());
+	if(scale<0.2) scale=0.2;
+	if(scale>1.5) scale=1.5;
+	double zpty=GetZptWeight(genZ.Pt()/scale,0,abs(lhe_l0.ID())==13?Lepton::Flavour::MUON:Lepton::Flavour::ELECTRON);
+	map_weight["_zpty0"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*zpty0*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
+	map_weight["_zpty"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*zpty*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;	
+      }
+    }
   }
   if(p.weightbit&SystematicWeight){
     map_weight["_noPUweight"]=p.w.lumiweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
