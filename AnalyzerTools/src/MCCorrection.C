@@ -1019,7 +1019,7 @@ double MCCorrection::GetJetTaggingSF(JetTagging::Parameters jtp, int JetFlavor, 
 
 double MCCorrection::GetJetTaggingCutValue(JetTagging::Tagger tagger, JetTagging::WP wp){
 
-  if(DataYear==2016){
+  if(DataYear==2016){ //2016 values: pre-Legacy (To be fixed)
     if(tagger==JetTagging::DeepCSV){
       if(wp==JetTagging::Loose)  return 0.2217;
       if(wp==JetTagging::Medium) return 0.6321;
@@ -1032,32 +1032,32 @@ double MCCorrection::GetJetTaggingCutValue(JetTagging::Tagger tagger, JetTagging
     }
   }
   if(DataYear==2017){
-    if(tagger==JetTagging::CSVv2){
-      if(wp==JetTagging::Loose)  return 0.5803;
-      if(wp==JetTagging::Medium) return 0.8838;
-      if(wp==JetTagging::Tight)  return 0.9693;
-    }
+    //if(tagger==JetTagging::CSVv2){
+    //  if(wp==JetTagging::Loose)  return 0.5803;
+    //  if(wp==JetTagging::Medium) return 0.8838;
+    //  if(wp==JetTagging::Tight)  return 0.9693;
+    //}
     if(tagger==JetTagging::DeepCSV){
-      if(wp==JetTagging::Loose)  return 0.1522;
-      if(wp==JetTagging::Medium) return 0.4941;
-      if(wp==JetTagging::Tight)  return 0.8001;
+      if(wp==JetTagging::Loose)  return 0.1355; // 0.1522;
+      if(wp==JetTagging::Medium) return 0.4506; // 0.4941;
+      if(wp==JetTagging::Tight)  return 0.7738; // 0.8001;
     }
     if(tagger==JetTagging::DeepJet){
-      if(wp==JetTagging::Loose)  return 0.0521;
-      if(wp==JetTagging::Medium) return 0.3033;
-      if(wp==JetTagging::Tight)  return 0.7489;
+      if(wp==JetTagging::Loose)  return 0.0532; // 0.0521;
+      if(wp==JetTagging::Medium) return 0.3040; // 0.3033;
+      if(wp==JetTagging::Tight)  return 0.7476; // 0.7489;
     }
   }
   if(DataYear==2018){
     if(tagger==JetTagging::DeepCSV){
-      if(wp==JetTagging::Loose)  return 0.1241;
-      if(wp==JetTagging::Medium) return 0.4184;
-      if(wp==JetTagging::Tight)  return 0.7527;
+      if(wp==JetTagging::Loose)  return 0.1208; // 0.1241;
+      if(wp==JetTagging::Medium) return 0.4168; // 0.4184;
+      if(wp==JetTagging::Tight)  return 0.7665; // 0.7527;
     }
     if(tagger==JetTagging::DeepJet){
-      if(wp==JetTagging::Loose)  return 0.0494;
-      if(wp==JetTagging::Medium) return 0.2770;
-      if(wp==JetTagging::Tight)  return 0.7264;
+      if(wp==JetTagging::Loose)  return 0.0490; // 0.0494;
+      if(wp==JetTagging::Medium) return 0.2783; // 0.2770;
+      if(wp==JetTagging::Tight)  return 0.7100; // 0.7264;
     }
   }
 

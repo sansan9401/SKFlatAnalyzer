@@ -7,7 +7,8 @@ void AFBAnalyzer::initializeAnalyzer(){
   IsNominalRun=!HasFlag("SYS")&&!HasFlag("PDFSYS");
   
   if(HasFlag("bjet")||HasFlag("nobjet")){
-    vector<JetTagging::Parameters> jtps={JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets)};
+    vector<JetTagging::Parameters> jtps={JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets),
+                                         JetTagging::Parameters(JetTagging::DeepJet,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets)};
     mcCorr->SetJetTaggingParameters(jtps);
   }
   if(fChain->GetListOfFiles()->GetEntries()){

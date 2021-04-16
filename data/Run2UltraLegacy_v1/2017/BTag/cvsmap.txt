@@ -1,9 +1,3 @@
-### taken frmo https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X on 29 Jan 2019
-2017 CSV All        297046 306462 CSVv2_94XSF_V2_B_F.csv
-2017 CSV PeriodDep  297046 299329 CSVv2_94XSF_V2_B.csv
-2017 CSV PeriodDep  297020 304671 CSVv2_94XSF_V2_C_E.csv
-2017 CSV PeriodDep  304671 306462 CSVv2_94XSF_V2_E_F.csv
-2017 DeepCSV All       297046 306462 DeepCSV_94XSF_V4_B_F.csv
-2017 DeepCSV PeriodDep 297046 299329 DeepCSV_94XSF_V3_B.csv
-2017 DeepCSV PeriodDep 297020 304671 DeepCSV_94XSF_V3_C_E.csv
-2017 DeepCSV PeriodDep 304671 306462 DeepCSV_94XSF_V3_E_F.csv
+### taken from https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL17 on 13 Apr 2021 (Won)
+2017 DeepCSV All       297046 306462 DeepCSV_106XUL17SF_WPonly_V2.csv
+2017 DeepJet All       297046 306462 DeepJet_106XUL17SF_WPonly_V2.csv

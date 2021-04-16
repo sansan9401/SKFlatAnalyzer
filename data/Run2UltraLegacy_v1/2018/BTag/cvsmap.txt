@@ -1,3 +1,3 @@
-## using values from  https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
-2018 DeepCSV All        315252  325175  DeepCSV_102XSF_V1.csv
-2018 DeepJet All        315252  325175	DeepJet_102XSF_V1.csv
+### taken from https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL18 on 13 Apr 2021 (Won)
+2018 DeepCSV All        315252  325175  DeepCSV_106XUL18SF_WPonly.csv
+2018 DeepJet All        315252  325175	DeepJet_106XUL18SF_WPonly.csv
