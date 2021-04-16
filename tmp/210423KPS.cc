@@ -101,9 +101,9 @@ void plot2(){
   amc.SavePlot("KPS/eff/ee2018_l0pt_amc_noL1","histname:ee2018/m52to150/l0pt_noL1 norm 1:logy xmax:100 xtitle:'Leading electron p_{T} [GeV]' title++ title:'ee 2018'");
 }
 void plot3(){
-  AFBPlotter amcss("amc+tau_amc+vv+wjets+tttw ss");
+  AFBPlotter amcss("amc+tau_amc+vv+wjets+tttw+ss ss");
   amcss.entries[1].style.linewidth=2;
-  AFBPlotter amcss2("amc+tau_amc+vv+wjets+tttw 1.7*ss");
+  AFBPlotter amcss2("amc+tau_amc+vv+wjets+tttw+1.7*ss 1.7*ss");
   amcss2.entries[1].style.linewidth=2;
   for(TString channel:{"mm","ee"}){
     for(TString era:{"2016a","2016b","2017","2018"}){
@@ -119,6 +119,34 @@ void plot3(){
       }
     }
   }
+  TCanvas *c=amcss2.DrawPlot("mm201[678ab]+/costhetaCS","project:x xmin:52 xmax:800 ymin:0 ymax:0.1 base:0 ytitle:'QCD multi-jet fraction' noleg logx type:2 title:'' xtitle+ ytitle+");
+  TLatex latex;
+  latex.SetTextSize(0.04);
+  latex.SetNDC();
+  c->cd();
+  latex.SetTextSize(0.033);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.92,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.71,0.92,"137 fb^{-1} (13 TeV)");
+  c->SaveAs("fig/KPS/qcd/mm_ratio.png");
+  c=amcss.DrawPlot("ee201[678ab]+/costhetaCS","project:x xmin:52 xmax:800 ymin:0 ymax:0.1 base:0 ytitle:'QCD multi-jet fraction' noleg logx type:2 title:'' xtitle+ ytitle+");
+  latex.SetNDC();
+  c->cd();
+  latex.SetTextSize(0.033);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.92,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.71,0.92,"137 fb^{-1} (13 TeV)");
+  c->SaveAs("fig/KPS/qcd/ee_ratio.png");
 }
 void plot4(){
   TCanvas* c;
@@ -316,4 +344,116 @@ void plot_ref(){
       }
     }
   }
+}
+void plot_kin1(){
+  AFBPlotter mi("data ^minnlo+tau_minnlo+vv+wjets+tttw");
+  AFBPlotter miss2("data ^minnlo+tau_minnlo+vv+wjets+tttw+1.7*ss");
+  miss2.SavePlot("KPS/kin/mm_mass","histname:mm2016[ab]/costhetaCS project:x xmin:60 xmax:600 logx widthweight widey 1:logy preliminary");
+  mi.SavePlot("KPS/kin/ee_mass","histname:ee2016[ab]/costhetaCS project:x xmin:60 xmax:600 logx widthweight widey 1:logy preliminary");
+
+  miss2.SavePlot("KPS/kin/mm_dipt","histname:mm2016[ab]/m[80,100]/dipt logx widthweight xmax:200 xmin:2 1:logy preliminary xtitle:'p_{T}(#mu#mu) [GeV]' 1:ymin:5 1:ymax:1000000000");
+  mi.SavePlot("KPS/kin/ee_dipt","histname:ee2016[ab]/m[80,100]/dipt logx widthweight xmax:200 xmin:2 1:logy preliminary xtitle:'p_{T}(ee) [GeV]' 1:ymin:5 1:ymax:1000000000");
+
+  miss2.SavePlot("KPS/kin/mm_lpt","histname:mm2016[ab]/m[80,100]/lpt logx widthweight xmax:200 xmin:10 1:logy preliminary xtitle:'Muon p_{T} [GeV]'");
+  mi.SavePlot("KPS/kin/ee_lpt","histname:ee2016[ab]/m[80,100]/lpt logx widthweight xmax:200 xmin:14 1:logy preliminary xtitle:'Electron p_{T} [GeV]'");
+
+}
+void plot_kin2(){
+  EfficiencyPlotter mi("data ^minnlo+tau_minnlo+vv+wjets+tttw");
+  EfficiencyPlotter miss2("data ^minnlo+tau_minnlo+vv+wjets+tttw+1.7*ss");
+
+  miss2.SavePlot("KPS/kin/mm_dirap","histname:mm2016[ab]/m80to100/dirap 1:logy preliminary xtitle:'y(#mu#mu)' ytitle:Events");
+  mi.SavePlot("KPS/kin/ee_dirap","histname:ee2016[ab]/m80to100/dirap 1:logy preliminary xtitle:'y(ee)' ytitle:Events");
+
+  miss2.SavePlot("KPS/kin/mm_leta","histname:mm2016[ab]/m80to100/leta 1:logy preliminary xtitle:'Muon #eta' noleg 1:ymin:100 1:ymax:10000000 ytitle:Events");
+  mi.SavePlot("KPS/kin/ee_leta","histname:ee2016[ab]/m80to100/lsceta 1:logy preliminary xtitle:'Electron #eta_{SC}' noleg ytitle:Events");
+}  
+void plot_qcd(){
+  AFBPlotter amc;
+  TCanvas* c=NULL;
+  TLegend* leg=NULL;
+  TLatex latex;
+  latex.SetTextSize(0.04);
+  latex.SetNDC();
+
+  c=amc.DrawPlot("EE2017/m[52,600]/dimass","widthweight logx type:1 title:'' xtitle+");
+  c->cd();
+  latex.SetTextSize(0.033);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.92,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.71,0.92,"41.5 fb^{-1} (13 TeV)");
+  c->SaveAs("fig/KPS/qcd/EE2017_dimass.png");
+
+  c=amc.DrawPlot("EE2017/m[52,600]/ss_dimass","widthweight logx type:1 title:'' xtitle+");
+  c->cd();
+  latex.SetTextSize(0.033);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.92,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.71,0.92,"41.5 fb^{-1} (13 TeV)");
+  c->SaveAs("fig/KPS/qcd/EE2017_ss_dimass.png");
+
+  c=amc.DrawPlot("MM2017/m[52,600]/dimass","widthweight logx type:1 title:'' xtitle+");
+  c->cd();
+  latex.SetTextSize(0.033);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.86,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.71,0.92,"41.5 fb^{-1} (13 TeV)");
+  c->SaveAs("fig/KPS/qcd/MM2017_dimass.png");
+
+  c=amc.DrawPlot("MM2017/m[52,600]/ss_dimass","widthweight logx type:1 title:'' xtitle+");
+  c->cd();
+  latex.SetTextSize(0.033);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.92,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.033);
+  latex.DrawLatex(0.71,0.92,"41.5 fb^{-1} (13 TeV)");
+  c->SaveAs("fig/KPS/qcd/MM2017_ss_dimass.png");
+
+  amc.Setup("data-amc-tau_amc-vv-wjets-tttw data-amc-tau_amc-vv-wjets-tttw");
+  amc.entries[1].SetStyle(2);
+  amc.entries[0].title="OS data-MC";
+  amc.entries[1].title="SS data-MC";
+  amc.entries[1].SetHistPrefix("ss_");
+  c=amc.DrawPlot("EE2017/m[52,600]/dimass","widthweight logx 2:widewidey preliminary");
+  c->cd(1);
+  leg=(TLegend*)c->GetPad(1)->GetPrimitive("TPave");
+  leg->SetX1NDC(0.54);leg->SetY1NDC(0.54);
+  gPad->Update();
+  gPad->Modified();
+  c->SaveAs("fig/KPS/qcd/EE2017_ss_dimass_sss.png");
+  c=amc.DrawPlot("MM2017/m[52,600]/dimass","widthweight logx 2:widewidey title:''");
+  c->cd(1);
+  latex.SetTextSize(0.05);
+  latex.SetTextColor(1);
+  latex.DrawLatex(0.16,0.86,"CMS #bf{#it{Preliminary}}");
+  latex.SetTextColor(2);
+  latex.SetTextSize(0.05);
+  latex.DrawLatex(0.4,0.92,"#it{Working in progress}");
+  latex.SetTextColor(1);
+  latex.SetTextSize(0.05);
+  latex.DrawLatex(0.71,0.92,"41.5 fb^{-1} (13 TeV)");
+  leg=(TLegend*)c->GetPad(1)->GetPrimitive("TPave");
+  leg->SetX1NDC(0.54);leg->SetY1NDC(0.54);
+  gPad->Update();
+  gPad->Modified();
+  c->SaveAs("fig/KPS/qcd/MM2017_ss_dimass_sss.png");
 }
