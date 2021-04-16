@@ -198,7 +198,7 @@ void Iterate(TString mode,int n=3){
   cmd+=" wait;";
   cout<<"Iteration 0, "<<mode<<endl;
   cout<<cmd<<endl;
-  //system(cmd); //FIXME uncomment this
+  system(cmd);
   cout<<"Save ZptWeight iter0"<<endl;
   if(mode.Contains(TRegexp("^[0-9]*$"))){
     SaveZptWeight("ee"+syear);
