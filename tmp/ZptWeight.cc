@@ -2,8 +2,8 @@ TString analyzer="ZptWeight";
 TString recoskim="SkimTree_Dilepton";
 TString genskim="";
 
-TString dyname="DYJets_MG";
-TString taudyname="";
+TString dyname="DYJetsToMuMu_MiNNLO";
+TString taudyname="DYJetsToTauTau_MiNNLO";
 vector<TString> backgrounds={"TTLL_powheg","WJets_MG","WW_pythia","WZ_pythia","ZZ_pythia"};
 map<TString,vector<TString>> datas={
   {"ee2016", {"DoubleEG_B_ver2","DoubleEG_C","DoubleEG_D","DoubleEG_E","DoubleEG_F","DoubleEG_G","DoubleEG_H"}},
@@ -22,6 +22,10 @@ map<TString,vector<TString>> datas={
 TH1* GetHist(TString filename,TString histname){
   TFile f(filename);
   TH1* hist=(TH1*)f.Get(histname);
+  if(!hist){
+    cout<<"No "<<histname<<" in "<<filename<<endl;
+    return hist;
+  }
   hist->SetDirectory(0);
   return hist;
 }
@@ -123,7 +127,7 @@ void SaveZptWeight(TString mode){
     cout<<"Unknown mode "<<mode<<endl;
     exit(1);
   }      
-  TString zptfiledir=getenv("SKFlat_WD")+TString("/data/")+getenv("SKFlatV")+"/"+syear+"/Zpt/";
+  TString zptfiledir=getenv("SKFlat_WD")+TString("/data/")+getenv("SKFlatV")+"/"+syear+"/SMP/";
   system("mkdir -p "+zptfiledir);
   TFile f(zptfiledir+"ZptWeight.root","update");
   int i=0;
@@ -148,7 +152,7 @@ void SaveNormWeight(TString mode){
     exit(1);
   }      
   TH1* hist=GetNormWeight(mode);
-  TString zptfiledir=getenv("SKFlat_WD")+TString("/data/")+getenv("SKFlatV")+"/"+syear+"/Zpt/";
+  TString zptfiledir=getenv("SKFlat_WD")+TString("/data/")+getenv("SKFlatV")+"/"+syear+"/SMP/";
   system("mkdir -p "+zptfiledir);
   TFile f(zptfiledir+"ZptWeight.root","update");
   hist->SetName(dyname+"_"+schannel+"_norm");
