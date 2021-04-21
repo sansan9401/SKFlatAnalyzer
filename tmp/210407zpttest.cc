@@ -455,3 +455,91 @@ void plot_test_y(){
   leg->AddEntry(gmgdata,"MadGraph reweighted to data");
   leg->Draw();
 }
+
+TGraphErrors* test_ratio(TString Sample_="",TString suffix="_nozptweight"){
+  if(Sample_!="") Sample=Sample_;
+
+  Plotter p;
+  Verbosity=0;
+  p.ScanFiles("/data6/Users/hsseo/SKFlatOutput/Run2UltraLegacy_v1/ZptWeight");
+  p.AddEntry(samples["2016preVFP/ZptWeight_"+Sample]);
+
+  new TCanvas;
+  TH1* h0=p.GetHist(0,"mm2016a/gen_dipt2dirap"+suffix,"project:x widthweight Ymin:-0.2 Ymax:0.2 xmin:0 xmax:10000");
+  h0->SetName("h0");
+  h0->Fit("expo","0","",0,10);
+  double scale=1/h0->GetFunction("expo")->Eval(0);
+  h0->Scale(scale);
+
+  int npar=12;
+  TF1* f0=new TF1("f0",MyFunc,0,10000,npar);
+  f0->SetNpx(10000);
+  f0->FixParameter(0,1);
+  f0->SetParameter(1,-0.03);
+  f0->SetParameter(2,1);
+  f0->SetParameter(3,0.007);
+  f0->SetParameter(4,-0.04);
+  f0->SetParameter(5,-0.02);
+  f0->SetParameter(6,-0.01);
+  for(int i=7;i<npar;i++){
+    f0->SetParameter(i,-0.001);
+    f0->SetParLimits(i,-0.1,0);
+  }
+  
+  h0->Fit(f0,"","",0,10);
+  h0->Fit(f0,"","",0,100);
+  h0->Fit(f0,"","",0,200);
+  h0->Fit(f0,"","",0,500);
+  h0->Fit(f0,"","",0,1000);
+  h0->Fit(f0,"","",0,2000);
+  h0->Fit(f0,"","",0,5000);
+  h0->Fit(f0,"","",0,10000);
+  f0->SetParameter(3,f0->GetParameter(3)-log(f0->Eval(0)));
+  f0->Draw("same");
+
+  for(int i=1;i<25;i+=5){
+    new TCanvas;
+    TH1* h=p.GetHist(0,"mm2016a/gen_dipt2dirap"+suffix,Form("project:x widthweight Ymin:%f Ymax:%f absy xmin:0 xmax:10000",i*0.2,(i+1)*0.2));
+    h->SetName(Form("h%d",i));
+    h->Fit("expo","0","",0,10);
+    double scale=1/h->GetFunction("expo")->Eval(0);
+    h->Scale(scale);
+
+    int npar=12;
+    TF1* f=new TF1(Form("f%d",i),MyFunc,0,10000,npar); 
+    f->SetNpx(10000);
+    f->FixParameter(0,1);
+    f->SetParameter(1,-0.03);
+    f->SetParameter(2,1);
+    f->SetParameter(3,0.007);
+    f->SetParameter(4,-0.04);
+    f->SetParameter(5,-0.02);
+    f->SetParameter(6,-0.01);
+    for(int i=7;i<npar;i++){
+      f->SetParameter(i,-0.001);
+      f->SetParLimits(i,-0.1,0);
+    }
+    
+    h->Fit(f,"","",0,10);
+    h->Fit(f,"","",0,100);
+    h->Fit(f,"","",0,200);
+    h->Fit(f,"","",0,500);
+    h->Fit(f,"","",0,1000);
+    h->Fit(f,"","",0,2000);
+    h->Fit(f,"","",0,5000);
+    h->Fit(f,"","",0,10000);
+    f->SetParameter(3,f->GetParameter(3)-log(f->Eval(0)));
+    f->Draw("same");
+    
+    new TCanvas;
+    TGraphErrors *g=new TGraphErrors;
+    for(int i=0;i<99;i++){
+      double x=i+1;
+      g->SetPoint(i,x*x,f->GetX(f0->Eval(x*x))/x/x);
+      //g->SetPoint(i,f->Eval(x*x),f->GetX(f0->Eval(x*x))/x/x);
+    }
+    g->GetHistogram()->GetYaxis()->SetRangeUser(0,1.1);
+    g->Draw();
+  }
+  return NULL;
+}
