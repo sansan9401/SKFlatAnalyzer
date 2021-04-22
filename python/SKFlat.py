@@ -255,7 +255,7 @@ for InputSample in InputSamples:
   tmpfilepath = SAMPLE_DATA_DIR+'/For'+SampleHOSTNAME+'/'+SkimString+InputSample+'.txt'
   if IsDATA:
     tmpfilepath = SAMPLE_DATA_DIR+'/For'+SampleHOSTNAME+'/'+SkimString+InputSample+'_'+DataPeriod+'.txt'
-  lines_files = open(tmpfilepath).readlines()
+  lines_files = os.popen("sed 's/#.*//' "+tmpfilepath+"|grep '.root'").readlines()
   os.system('cp '+tmpfilepath+' '+base_rundir+'/input_filelist.txt')
 
   NTotalFiles = len(lines_files)
