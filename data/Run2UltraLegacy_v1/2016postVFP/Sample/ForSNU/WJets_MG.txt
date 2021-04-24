@@ -57,7 +57,7 @@
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_57.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_58.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_59.root
-/gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_60.root
+#/gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_60.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_61.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_62.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016postVFP/MC/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/210305_091019/0000/SKFlatNtuple_2016postVFP_MC_63.root

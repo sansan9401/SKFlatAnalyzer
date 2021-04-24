@@ -44,7 +44,7 @@
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_44.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_45.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_46.root
-/gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_47.root
+#/gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_47.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_48.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_49.root
 /gv0/DATA/SKFlat/Run2UltraLegacy_v1/2016preVFP/DATA/SingleElectron/periodF/210223_043006/0000/SKFlatNtuple_2016preVFP_DATA_50.root
