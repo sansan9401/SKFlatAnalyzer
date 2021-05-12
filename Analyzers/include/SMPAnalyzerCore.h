@@ -184,7 +184,7 @@ public:
   void PrintGens(const vector<Gen>& gens);
   double GetBinContentUser(TH2* hist,double valx,double valy,int sys);
   double GetBinContentUser(TH3* hist,double valx,double valy,double valz,int sys);
-  void GetDYLHEParticles(const vector<LHE>& lhes,LHE& l0,LHE& l1);
+  void GetDYLHEParticles(const vector<LHE>& lhes,LHE& p0,LHE& p1,LHE& l0,LHE& l1,LHE& j0);
   void GetDYGenParticles(const vector<Gen>& gens,Gen& parton0,Gen& parton1,Gen& l0,Gen& l1,int mode);
   static Gen SMPGetGenMatchedLepton(const Lepton& lep, const std::vector<Gen>& gens, int mode=0);
   std::vector<Electron> SMPGetElectrons(TString id, double ptmin, double fetamax);
@@ -207,7 +207,7 @@ public:
   Event _event;
   double reductionweight=1;
   vector<LHE> lhes;
-  LHE lhe_l0,lhe_l1;
+  LHE lhe_p0,lhe_p1,lhe_l0,lhe_l1,lhe_j0;
   vector<Gen> gens;
   Gen gen_p0,gen_p1,gen_l0,gen_l1,gen_l0_dressed,gen_l1_dressed,gen_l0_bare,gen_l1_bare;
 

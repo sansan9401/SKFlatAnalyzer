@@ -6,7 +6,7 @@
 class AFBAnalyzer : public SMPAnalyzerCore {
 
 public:
-
+  void test();
   void initializeAnalyzer();
   void executeEvent();
   Parameter MakeParameter(TString key);
@@ -18,7 +18,8 @@ public:
 
   //double GetCosThetaCS(const vector<Lepton*>& leps);
   double GetCosThetaCS(const Particle *p0,const Particle *p1,int direction=0);
-  double GetCosTheta(const vector<Lepton*>& leps,const vector<Jet>& jets,TString option,double fcut);
+  double GetCosThetaR(const Particle *l0,const Particle *l1,const Particle *j0,int direction=0);
+  double GetCosThetaT(const Particle *l0,const Particle *l1,const Particle *j0,int direction=0);
   void FillHistsAFB(TString pre,TString hpre,TString suf,Particle* l0,Particle* l1,map<TString,double> map_weight);
   void FillHistsToy(TString pre,TString hpre,TString suf,Particle* l0,Particle* l1,map<TString,double> map_weight);
   void FillHardHists(TString pre,TString suf,const Gen& genparton0,const Gen& genparton1,const Gen& genhardl0,const Gen& genhardl1,const Gen& genhardj0,double w);

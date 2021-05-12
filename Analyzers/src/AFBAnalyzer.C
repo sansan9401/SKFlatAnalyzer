@@ -88,7 +88,19 @@ void AFBAnalyzer::executeEvent(){
 
       //////////////// Fill LHE,Gen hists //////////////////////
       if(IsNominalRun&&!IsSkimmed&&!HasFlag("ALL")){
+	TLorentzVector lhe_Z=lhe_l0+lhe_l1;
+	double lhe_Zmass=lhe_Z.M();
+	double lhe_Zrap=lhe_Z.Rapidity();
+	double lhe_Zpt=lhe_Z.Pt();
 	FillHistsAFB(p.prefix,"lhe_","",(Particle*)&lhe_l0,(Particle*)&lhe_l1,map_weight);
+	FillHist(p.prefix+"lhe_costhetaCS",lhe_Zmass,lhe_Zrap,lhe_Zpt,GetCosThetaCS(&lhe_l0,&lhe_l1,0),map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	if(lhe_j0.Pt()){
+	  FillHist(p.prefix+"lhe_costhetaR",lhe_Zmass,lhe_Zrap,lhe_Zpt,GetCosThetaR(&lhe_l0,&lhe_l1,&lhe_j0,0),map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	  FillHist(p.prefix+"lhe_costhetaT",lhe_Zmass,lhe_Zrap,lhe_Zpt,GetCosThetaT(&lhe_l0,&lhe_l1,&lhe_j0,0),map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	}
+	if(lhe_l0.Pt()>p.c.lepton0pt&&lhe_l1.Pt()>p.c.lepton1pt&&fabs(lhe_l0.Eta())<letacut&&fabs(lhe_l1.Eta())<letacut){
+	  FillHistsAFB(p.prefix,"lhefid_","",(Particle*)&lhe_l0,(Particle*)&lhe_l1,map_weight);
+	}
 	FillHistsAFB(p.prefix,"gen_","",(Particle*)&gen_l0,(Particle*)&gen_l1,map_weight);
 	FillHistsAFB(p.prefix,"gen_","_dressed",(Particle*)&gen_l0_dressed,(Particle*)&gen_l1_dressed,map_weight);
 	FillHistsAFB(p.prefix,"gen_","_bare",(Particle*)&gen_l0_bare,(Particle*)&gen_l1_bare,map_weight);
@@ -148,15 +160,16 @@ bool AFBAnalyzer::PassSelection(Parameter& p){
   }
 
   int n_bjet=0;
-  if(p.prefix.Contains("bjet")||p.prefix.Contains("nobjet")){
-    std::vector<Jet> jets=GetJets("tightLepVeto",30,2.7);
-    std::sort(jets.begin(),jets.end(),PtComparing);
+  std::vector<Jet> jets=GetJets("tightLepVeto",30,2.7);
+  std::sort(jets.begin(),jets.end(),PtComparing);
 
-    JetTagging::Parameters jtp = JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets);
-    for(const auto& jet:jets)
-      if(mcCorr->IsBTagged_2a(jtp,jet))
-	n_bjet++;
+  JetTagging::Parameters jtp = JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets);
+  for(const auto& jet:jets)
+    if(mcCorr->IsBTagged_2a(jtp,jet))
+      n_bjet++;
+  p.intmap["nbjet"]=n_bjet;
     
+  if(p.prefix.Contains("bjet")||p.prefix.Contains("nobjet")){
     if(p.prefix.Contains("bjet")&&!n_bjet) return false;
     if(p.prefix.Contains("nobjet")&&n_bjet) return false;
     if(IsNominalRun) FillCutflow(p.prefix+p.hprefix+"cutflow","BJetCut",p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight);
@@ -288,52 +301,96 @@ double AFBAnalyzer::GetCosThetaCS(const Particle *p0,const Particle *p1,int dire
   if(direction==0) direction=dilepton.Pz()>0?1:-1;
   return direction*2*(l0pp*l1pm-l0pm*l1pp)/sqrt(dimass*dimass*(dimass*dimass+dipt*dipt));
 } 
-double AFBAnalyzer::GetCosTheta(const vector<Lepton*>& leps,const vector<Jet>& jets,TString option,double fcut){
-  TLorentzVector *l0,*l1;
-  if(leps.at(0)->Charge()<0&&leps.at(1)->Charge()>0){
-    l0=leps.at(0);
-    l1=leps.at(1);
-  }else if(leps.at(0)->Charge()>0&&leps.at(1)->Charge()<0){
-    l0=leps.at(1);
-    l1=leps.at(0);
+double AFBAnalyzer::GetCosThetaR(const Particle *l0,const Particle *l1,const Particle *j0,int direction){
+  const Particle *lm=NULL,*lp=NULL;
+  if(l0->Charge()<0&&l1->Charge()>0){
+    lm=l0; lp=l1;
+  }else if(l0->Charge()>0&&l1->Charge()<0){
+    lm=l1; lp=l0;
   }else{
     if(gRandom->Rndm()<0.5){
-      l0=leps.at(0);
-      l1=leps.at(1);
+      lm=l0; lp=l1;
     }else{
-      l0=leps.at(1);
-      l1=leps.at(0);
-    }      
-  }
-  TLorentzVector dilepton=*l0+*l1;
-  TLorentzVector j0;
-  if(jets.size()>0){
-    if((jets[0]+dilepton).Pt()/dilepton.Pt()<fcut)
-      j0=jets[0];
-  }
-  TLorentzVector system=dilepton+j0;
-  double direction=dilepton.Pz()/fabs(dilepton.Pz());
-  double systemmass=system.M();
-  //double systempt=system.Pt();
-  double systempz=system.Pz();
-  TLorentzVector p0(0,0,(sqrt(systemmass*systemmass+systempz*systempz)+systempz)/2.,(sqrt(systemmass*systemmass+systempz*systempz)+systempz)/2.);
-  TLorentzVector p1(0,0,-(sqrt(systemmass*systemmass+systempz*systempz)-systempz)/2.,(sqrt(systemmass*systemmass+systempz*systempz)-systempz)/2.);
-  TLorentzVector particle=*l0;
-  TVector3 b1=system.BoostVector();
-  dilepton.Boost(-b1);particle.Boost(-b1);
-  p0.Boost(-b1);p1.Boost(-b1);j0.Boost(-b1);
-  if(j0.E()>0){
-    if(p0.Angle(j0.Vect())<p1.Angle(j0.Vect())){
-      if(option.Contains("C")) p0-=j0;
-      if(option.Contains("B")) direction=-1;
-    }else{
-      if(option.Contains("C")) p1-=j0;
-      if(option.Contains("B")) direction=1;
+      lm=l1; lp=l0;
     }
   }
-  TVector3 b2=dilepton.BoostVector();
-  p0.Boost(-b2);p1.Boost(-b2);particle.Boost(-b2);
-  return direction*cos(particle.Angle(p0.Vect().Unit()-p1.Vect().Unit()));
+  if(j0->E()){
+    int jid=0;
+    if(j0->InheritsFrom("LHE")) jid=((LHE*)j0)->ID();
+    if(jid==22){
+      TLorentzVector dilepton=*lm+*lp;
+      TLorentzVector jet=*j0;
+      TLorentzVector system=dilepton+jet;
+      TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+      TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+      TLorentzVector lepton=*lm;
+      TVector3 b1=system.BoostVector();
+      dilepton.Boost(-b1);lepton.Boost(-b1);
+      p0.Boost(-b1);p1.Boost(-b1);jet.Boost(-b1);
+      if(p0.Angle(jet.Vect())<p1.Angle(jet.Vect())){
+	p0-=jet;
+      }else{
+	p1-=jet;
+      }
+      TVector3 b2=dilepton.BoostVector();
+      p0.Boost(-b2);p1.Boost(-b2);lepton.Boost(-b2);
+      if(direction==0) direction=system.Pz()/fabs(system.Pz());
+      return direction*cos(lepton.Angle(p0.Vect().Unit()-p1.Vect().Unit()));
+    }else if(0<jid&&jid<=6){
+      return ((*lm-*lp)*(*j0))/((*lm+*lp)*(*j0));
+    }else if(-6<=jid&&jid<0){
+      return -1*((*lm-*lp)*(*j0))/((*lm+*lp)*(*j0));
+    }
+  }
+  return GetCosThetaCS(l0,l1,direction);
+}
+double AFBAnalyzer::GetCosThetaT(const Particle *l0,const Particle *l1,const Particle *j0,int direction){
+  const Particle *lm=NULL,*lp=NULL;
+  if(l0->Charge()<0&&l1->Charge()>0){
+    lm=l0; lp=l1;
+  }else if(l0->Charge()>0&&l1->Charge()<0){
+    lm=l1; lp=l0;
+  }else{
+    if(gRandom->Rndm()<0.5){
+      lm=l0; lp=l1;
+    }else{
+      lm=l1; lp=l0;
+    }
+  }
+  if(j0->E()){
+    int jid=0;
+    if(j0->InheritsFrom("LHE")) jid=((LHE*)j0)->ID();
+    TLorentzVector dilepton=*lm+*lp;
+    TLorentzVector jet=*j0;
+    TLorentzVector system=dilepton+jet;
+    TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+    TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+    TLorentzVector lepton=*lm;
+    TVector3 b1=system.BoostVector();
+    dilepton.Boost(-b1);lepton.Boost(-b1);
+    p0.Boost(-b1);p1.Boost(-b1);jet.Boost(-b1);
+    int temp_direction=direction;
+    if(p0.Angle(jet.Vect())<p1.Angle(jet.Vect())){
+      p0-=jet;
+      if(temp_direction==0) direction=-1;
+    }else{
+      p1-=jet;
+      if(temp_direction==0) direction=+1;
+    }
+    TVector3 b2=dilepton.BoostVector();
+    p0.Boost(-b2);p1.Boost(-b2);lepton.Boost(-b2);
+    if(direction==0){
+      if(jid==22){
+	direction=system.Pz()/fabs(system.Pz());
+      }else if(0<jid&&jid<=6){
+	direction=temp_direction;
+      }else if(-6<=jid&&jid<0){
+	direction=-temp_direction;
+      }
+      return direction*cos(lepton.Angle(p0.Vect().Unit()-p1.Vect().Unit()));
+    }
+  }
+  return GetCosThetaCS(l0,l1,direction);
 }
 void AFBAnalyzer::FillHistsToy(TString pre,TString hpre,TString suf,Particle* l0,Particle* l1,map<TString,double> map_weight){
   int n_toy=toy_random.size();
@@ -511,4 +568,46 @@ double AFBAnalyzer::GetCosThetaWeight(double mass,double pt,double cost,TString 
     val*=GetBinContentUser(it->second,mass,pt,cost,0);
   if(val==0) val=1.;
   return val;
+}
+void AFBAnalyzer::test(){
+  vector<LHE> lhes=GetLHEs();
+  for(auto lhe:lhes) lhe.Print();
+  if(lhe_j0.E()){
+    cout<<"Jet event"<<endl;
+    TLorentzVector z,j,system;
+    system=lhe_l0+lhe_l1+lhe_j0;
+    cout<<"system:";system.Print();
+    TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+    TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+    j=lhe_j0;
+    TVector3 b=system.BoostVector();
+    p0.Boost(-b);
+    p1.Boost(-b);
+    j.Boost(-b);
+    (-b).Print();
+    cout<<"After Boost"<<endl;
+    p0.Print();
+    p1.Print();
+    j.Print();
+    
+    cout<<"JetID: "<<lhe_j0.ID()<<" Angle0: "<<p0.Angle(j.Vect())<<" Angle1:"<<p1.Angle(j.Vect())<<endl;
+  }else{
+    cout<<"No Jet"<<endl;
+    TLorentzVector z,system,l;
+    system=lhe_l0+lhe_l1;
+    cout<<"system:";system.Print();
+    TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+    TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+    l=lhe_l0;
+    TVector3 b=system.BoostVector();
+    p0.Boost(-b);
+    p1.Boost(-b);
+    l.Boost(-b);
+    cout<<"After Boost"<<endl;
+    p0.Print();
+    p1.Print();
+    l.Print();
+    cout<<"CosTheta: "<<cos(l.Angle(p0.Vect().Unit()-p1.Vect().Unit()))<<" CosThetaCS: "<<GetCosThetaCS(&lhe_l0,&lhe_l1)<<endl;
+    
+  }
 }

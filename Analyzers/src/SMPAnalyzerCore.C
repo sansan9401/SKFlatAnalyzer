@@ -32,7 +32,7 @@ void SMPAnalyzerCore::beginEvent(){
     lhes=GetLHEs();
     gens=GetGens();
     if(IsDYSample){
-      GetDYLHEParticles(lhes,lhe_l0,lhe_l1);
+      GetDYLHEParticles(lhes,lhe_p0,lhe_p1,lhe_l0,lhe_l1,lhe_j0);
       GetDYGenParticles(gens,gen_p0,gen_p1,gen_l0,gen_l1,3);
       GetDYGenParticles(gens,gen_p0,gen_p1,gen_l0_dressed,gen_l1_dressed,1);
       GetDYGenParticles(gens,gen_p0,gen_p1,gen_l0_bare,gen_l1_bare,0);
@@ -645,18 +645,26 @@ double SMPAnalyzerCore::GetBinContentUser(TH3* hist,double valx,double valy,doub
   if(valz>zmax) valz=zmax-0.001;
   return hist->GetBinContent(hist->FindBin(valx,valy,valz))+sys*hist->GetBinError(hist->FindBin(valx,valy,valz));
 }
-void SMPAnalyzerCore::GetDYLHEParticles(const vector<LHE>& lhes,LHE& l0,LHE& l1){
+void SMPAnalyzerCore::GetDYLHEParticles(const vector<LHE>& lhes,LHE& p0,LHE& p1,LHE& l0,LHE& l1,LHE& j0){
   if(!IsDYSample){
     cout <<"[AFBAnalyzer::GetDYLHEParticles] this is for DY event"<<endl;
     exit(EXIT_FAILURE);
   }
+  p0=LHE();
+  p1=LHE();
   l0=LHE();
   l1=LHE();
+  j0=LHE();
   for(int i=0;i<(int)lhes.size();i++){
+    if(p0.ID()==0&&lhes[i].Status()==-1&&lhes[i].Eta()>0) p0=lhes[i];
+    if(p1.ID()==0&&lhes[i].Status()==-1&&lhes[i].Eta()<0) p1=lhes[i];
     if(l0.ID()==0&&(abs(lhes[i].ID())==11||abs(lhes[i].ID())==13||abs(lhes[i].ID())==15)) l0=lhes[i];
     if(l0.ID()&&lhes[i].ID()==-l0.ID()) l1=lhes[i];
+    if(lhes[i].Status()==1)
+      if(abs(lhes[i].ID())<=6||lhes[i].ID()==21)
+	if(lhes[i].Pt()>j0.Pt()) j0=lhes[i];
   }
-  if(l0.ID()==0||l1.ID()==0){
+  if(p0.ID()==0||p1.ID()==0||l0.ID()==0||l1.ID()==0){
     cout <<"[AFBAnalyzer::GetLHEParticles] something is wrong"<<endl;
     exit(EXIT_FAILURE);
   }
