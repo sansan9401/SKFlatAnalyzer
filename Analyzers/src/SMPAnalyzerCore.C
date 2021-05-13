@@ -40,18 +40,20 @@ void SMPAnalyzerCore::beginEvent(){
   }
 }
 void SMPAnalyzerCore::executeEventWithParameter(Parameter p){
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"lumi",p.w.lumiweight);
+  if(p.weightbit&NominalWeight) FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"lumi",p.w.lumiweight);
   
   if(!_event.PassTrigger(p.triggers)) return;
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"passTrig",p.w.lumiweight);
+  if(p.weightbit&NominalWeight) FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"passTrig",p.w.lumiweight);
 
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"PU",p.w.lumiweight*p.w.PUweight);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"prefire",p.w.lumiweight*p.w.PUweight*p.w.prefireweight);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"zpt",p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"z0",p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight);
+  if(p.weightbit&NominalWeight){
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"PU",p.w.lumiweight*p.w.PUweight);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"prefire",p.w.lumiweight*p.w.PUweight*p.w.prefireweight);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"zpt",p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"z0",p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight);
+  }
 
   double eventweight=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*p.w.zptweight;
-  FillHist(p.prefix+p.hprefix+"nlepton"+p.suffix,p.muons.size()+p.electrons.size(),eventweight,10,0,10);
+  if(p.weightbit&NominalWeight) FillHist(p.prefix+p.hprefix+"nlepton"+p.suffix,p.muons.size()+p.electrons.size(),eventweight,10,0,10);
 
   /////////////////////// selection ///////////////////////
   if(!PassSelection(p)) return;
@@ -59,11 +61,13 @@ void SMPAnalyzerCore::executeEventWithParameter(Parameter p){
   ///////////////// efficiency scale factors ///////////////////
   EvalIDSF(p);
   EvalTriggerSF(p);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"RECOSF",eventweight*p.w.RECOSF);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"IDSF",eventweight*p.w.RECOSF*p.w.IDSF);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"ISOSF",eventweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"triggerSF",eventweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF);
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"CFSF",eventweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF);
+  if(p.weightbit&NominalWeight){
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"RECOSF",eventweight*p.w.RECOSF);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"IDSF",eventweight*p.w.RECOSF*p.w.IDSF);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"ISOSF",eventweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"triggerSF",eventweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF);
+    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"CFSF",eventweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF);
+  }
 
   ////// Fill histograms //////////
   FillHists(p);
@@ -128,10 +132,10 @@ bool SMPAnalyzerCore::PassSelection(Parameter& p){
   double weight=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*p.w.zptweight;
 
   if(!PassMETFilter()) return false;
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"METfilter",weight);  
+  if(p.weightbit&NominalWeight) FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"METfilter",weight);  
   
   if(!p.lepton0||!p.lepton1) return false;
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"Dilepton",weight);
+  if(p.weightbit&NominalWeight) FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"Dilepton",weight);
 
   if(p.c.lepton0pt>0){
     if(p.lepton0->Pt()<p.c.lepton0pt) return false;
@@ -171,10 +175,10 @@ bool SMPAnalyzerCore::PassSelection(Parameter& p){
     if(p.aelectrons.size()<2) return false;
     if(p.aelectrons.at(1).Pt()<p.c.aelectron1pt) return false;
   }
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"LepPtCut",weight);
+  if(p.weightbit&NominalWeight) FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"LepPtCut",weight);
 
   if(p.lepton0->Charge()*p.lepton1->Charge()>0) p.hprefix+="ss_";
-  FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"charge",weight);
+  if(p.weightbit&NominalWeight) FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"charge",weight);
 
   return true;
 }

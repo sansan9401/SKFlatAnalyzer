@@ -875,7 +875,7 @@ void MCCorrection::SetupJetTagging(){
   if(IsDATA) return;
 
   TString datapath = getenv("DATA_DIR");
-  TString btagpath = datapath+"/"+TString::Itoa(DataYear,10)+"/BTag/";
+  TString btagpath = datapath+"/"+GetEra()+"/BTag/";
 
   std::map< string, BTagCalibration > tmp_map_BTagCalibration; //==== key = tagger+"_"+method
 
