@@ -26,79 +26,103 @@ void EfficiencyValidation::executeEvent(){
   }
 
   //////// testing channels //////////
+  
   if(GetEra()=="2017"){
     if(!IsDATA||DataStream.Contains("DoubleEG")){
       Parameter p=MakeParameter("ee");
       p.suffix="_noL1";
       p.k.triggerSF={"Ele23Leg1_MediumID_Q_v3_2","Ele12Leg2_MediumID_Q"};
-      executeEventWithParameter(p);
+      //executeEventWithParameter(p);
     }
   }else if(GetEra()=="2018"){
     if(!IsDATA||DataStream.Contains("DoubleMuon")){
       Parameter p=MakeParameter("mm");
       p.suffix="_new";
       p.SetMuonKeys("IDISO_SF_MediumID_trkIsoLoose_Q_new","",{"Mu17Leg1_MediumID_trkIsoLoose_Q_new","Mu8Leg2_MediumID_trkIsoLoose_Q_new"});
-      executeEventWithParameter(p);
+      //executeEventWithParameter(p);
     }
     if(!IsDATA||DataStream.Contains("SingleMuon")){ 
       Parameter p=MakeParameter("mu");
       p.suffix="_new";
       p.SetMuonKeys("IDISO_SF_MediumID_trkIsoLoose_Q_new","",{"IsoMu24_MediumID_trkIsoLoose_Q_new"});
-      executeEventWithParameter(p);
+      //executeEventWithParameter(p);
     }
     if(!IsDATA||DataStream.Contains("EGamma")){
       Parameter p=MakeParameter("ee");
       p.suffix="_noL1";
       p.k.triggerSF={"Ele23Leg1_MediumID_Q_v3","Ele12Leg2_MediumID_Q"};
-      executeEventWithParameter(p);
+      //executeEventWithParameter(p);
 
       p=MakeParameter("el");
       p.prefix="el201828/";
       p.triggers={"HLT_Ele28_WPTight_Gsf_v"};
       p.k.triggerSF={"Ele28_MediumID_Q"};
       if(!IsDATA) p.w.lumiweight*=23687.253/59827.879;
-      executeEventWithParameter(p);
+      //executeEventWithParameter(p);
 
       p=MakeParameter("el");
       p.prefix="el201832/";
       p.triggers={"HLT_Ele32_WPTight_Gsf_v"};
       p.k.triggerSF={"Ele32_MediumID_Q"};
       p.c.lepton0pt=35;
-      executeEventWithParameter(p);
+      //executeEventWithParameter(p);
     }
   }    
 }
-
+SMPAnalyzerCore::Parameter EfficiencyValidation::MakeParameter(TString key,TString option){
+  Parameter p=SMPAnalyzerCore::MakeParameter(key,option);
+  p.weightbit|=EfficiencyWeight;
+  return p;
+}
 void EfficiencyValidation::FillHists(Parameter& p){
-  p.weightmap[""]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
+  p.weightmap[""]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
   if(!IsDATA&&p.suffix==""){
     p.weightmap["_noweight"]=p.w.lumiweight;
-    p.weightmap["_noPUweight"]=p.w.lumiweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_noprefireweight"]=p.w.lumiweight*p.w.PUweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_nozptweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_noz0weight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_noPUweight"]=p.w.lumiweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_noprefireweight"]=p.w.lumiweight*p.w.PUweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_nozptweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_noz0weight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
     
-    p.weightmap["_noRECOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_RECOSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF_up*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_RECOSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF_down*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_noelectronRECOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+    for(int i=0;i<p.w.electronRECOSF_sys.size();i++){
+      for(int j=0;j<p.w.electronRECOSF_sys[i].size();j++){
+	p.weightmap[Form("_electronRECOSF_s%d_m%d",i,j)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF_sys[i][j]*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      }
+    }	
     
-    p.weightmap["_noIDSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_IDSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF_up*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_IDSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF_down*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_noelectronIDSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+    for(int i=0;i<p.w.electronIDSF_sys.size();i++){
+      for(int j=0;j<p.w.electronIDSF_sys[i].size();j++){
+	p.weightmap[Form("_electronIDSF_s%d_m%d",i,j)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF_sys[i][j]*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      }
+    }	
+
+    p.weightmap["_nomuonIDSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+    for(int i=0;i<p.w.muonIDSF_sys.size();i++){
+      for(int j=0;j<p.w.muonIDSF_sys[i].size();j++){
+	p.weightmap[Form("_muonIDSF_s%d_m%d",i,j)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF_sys[i][j]*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      }
+    }	
     
-    p.weightmap["_noISOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_ISOSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF_up*p.w.triggerSF*p.w.CFSF;
-    p.weightmap["_ISOSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF_down*p.w.triggerSF*p.w.CFSF;
+    p.weightmap["_noISOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.triggerSF*p.w.CFSF;
+    for(int i=0;i<p.w.muonISOSF_sys.size();i++){
+      for(int j=0;j<p.w.muonISOSF_sys[i].size();j++){
+	p.weightmap[Form("_ISOSF_s%d_m%d",i,j)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF_sys[i][j]*p.w.triggerSF*p.w.CFSF;
+      }
+    }	
     
-    p.weightmap["_notriggerSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.CFSF;
-    p.weightmap["_triggerSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF_up*p.w.CFSF;
-    p.weightmap["_triggerSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF_down*p.w.CFSF;
+    p.weightmap["_notriggerSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.CFSF;
+    for(int i=0;i<p.w.triggerSF_sys.size();i++){
+      for(int j=0;j<p.w.triggerSF_sys[i].size();j++){
+	p.weightmap[Form("_triggerSF_s%d_m%d",i,j)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF_sys[i][j]*p.w.CFSF;
+      }
+    }	
     
     p.weightmap["_noefficiencySF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.CFSF;
     
-    p.weightmap["_noCFSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    p.weightmap["_CFSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF_up;
-    p.weightmap["_CFSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF_down;
+    p.weightmap["_noCFSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF;
+    p.weightmap["_CFSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF_up;
+    p.weightmap["_CFSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF_down;
   }
 
   TLorentzVector dilepton=(*p.lepton0)+(*p.lepton1);
@@ -106,10 +130,6 @@ void EfficiencyValidation::FillHists(Parameter& p){
   if(dimass>=52&&dimass<150){
     FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"m52to150",p.weightmap[""]);
     FillHistsEfficiency(p,"m52to150/");
-  }
-  if(dimass>=60&&dimass<120){
-    FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"m60to120",p.weightmap[""]);
-    FillHistsEfficiency(p,"m60to120/");
   }
   if(dimass>=80&&dimass<100){
     FillCutflow(p.prefix+p.hprefix+"cutflow"+p.suffix,"m80to100",p.weightmap[""]);
@@ -133,7 +153,7 @@ void EfficiencyValidation::FillHistsEfficiency(Parameter& p,TString region){
       FillHist(Form("%slpt%s",pre.Data(),suf.Data()),pt,w,500,0,500);
       FillHist(Form("%sleta%s",pre.Data(),suf.Data()),eta,w,120,-3,3);
     }
-      
+
     TLorentzVector dilepton=(*p.lepton0)+(*p.lepton1);
     double dimass=dilepton.M();
     double dipt=dilepton.Pt();

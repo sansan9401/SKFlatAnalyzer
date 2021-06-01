@@ -5,8 +5,8 @@ Trigger Eff_MC    Mu17Leg1_MediumID_trkIsoLoose_QPlus     UL2017_Mu17_Plus.root 
 Trigger Eff_MC    Mu17Leg1_MediumID_trkIsoLoose_QMinus    UL2017_Mu17_Minus.root       muonEffi_mc_eta_pt
 Trigger Eff_MC    Mu8Leg2_MediumID_trkIsoLoose_QPlus      UL2017_Mu8_Plus.root         muonEffi_mc_eta_pt
 Trigger Eff_MC    Mu8Leg2_MediumID_trkIsoLoose_QMinus     UL2017_Mu8_Minus.root        muonEffi_mc_eta_pt
-Trigger Eff_MC    IsoMu2427_MediumID_trkIsoLoose_QPlus    UL2017_IsoMu2427_plus.root   muonEffi_mc_eta_pt
-Trigger Eff_MC    IsoMu2427_MediumID_trkIsoLoose_QMinus   UL2017_IsoMu2427_minus.root  muonEffi_mc_eta_pt
+Trigger Eff_MC    IsoMu2427_MediumID_trkIsoLoose_QPlus    UL2017_IsoMu2427_Plus.root   muonEffi_mc_eta_pt
+Trigger Eff_MC    IsoMu2427_MediumID_trkIsoLoose_QMinus   UL2017_IsoMu2427_Minus.root  muonEffi_mc_eta_pt
 Trigger Eff_MC    IsoMu24_MediumID_trkIsoLoose_QPlus      UL2017_IsoMu24_Plus.root     muonEffi_mc_eta_pt
 Trigger Eff_MC    IsoMu24_MediumID_trkIsoLoose_QMinus     UL2017_IsoMu24_Minus.root    muonEffi_mc_eta_pt
 Trigger Eff_MC    IsoMu27_MediumID_trkIsoLoose_QPlus      UL2017_IsoMu27_Plus.root     muonEffi_mc_eta_pt
@@ -15,8 +15,8 @@ Trigger Eff_DATA  Mu17Leg1_MediumID_trkIsoLoose_QPlus     UL2017_Mu17_Plus.root 
 Trigger Eff_DATA  Mu17Leg1_MediumID_trkIsoLoose_QMinus    UL2017_Mu17_Minus.root       muonEffi_data_eta_pt
 Trigger Eff_DATA  Mu8Leg2_MediumID_trkIsoLoose_QPlus      UL2017_Mu8_Plus.root         muonEffi_data_eta_pt
 Trigger Eff_DATA  Mu8Leg2_MediumID_trkIsoLoose_QMinus     UL2017_Mu8_Minus.root        muonEffi_data_eta_pt
-Trigger Eff_DATA  IsoMu2427_MediumID_trkIsoLoose_QPlus    UL2017_IsoMu2427_plus.root   muonEffi_data_eta_pt
-Trigger Eff_DATA  IsoMu2427_MediumID_trkIsoLoose_QMinus   UL2017_IsoMu2427_minus.root  muonEffi_data_eta_pt
+Trigger Eff_DATA  IsoMu2427_MediumID_trkIsoLoose_QPlus    UL2017_IsoMu2427_Plus.root   muonEffi_data_eta_pt
+Trigger Eff_DATA  IsoMu2427_MediumID_trkIsoLoose_QMinus   UL2017_IsoMu2427_Minus.root  muonEffi_data_eta_pt
 Trigger Eff_DATA  IsoMu24_MediumID_trkIsoLoose_QPlus      UL2017_IsoMu24_Plus.root     muonEffi_data_eta_pt
 Trigger Eff_DATA  IsoMu24_MediumID_trkIsoLoose_QMinus     UL2017_IsoMu24_Minus.root    muonEffi_data_eta_pt
 Trigger Eff_DATA  IsoMu27_MediumID_trkIsoLoose_QPlus      UL2017_IsoMu27_Plus.root     muonEffi_data_eta_pt
