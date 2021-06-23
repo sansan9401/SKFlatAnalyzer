@@ -6,11 +6,10 @@ void AFBAnalyzer::initializeAnalyzer(){
   SetupCosThetaWeight();
   IsNominalRun=!HasFlag("SYS")&&!HasFlag("PDFSYS");
   
-  if(HasFlag("bjet")||HasFlag("nobjet")){
-    vector<JetTagging::Parameters> jtps={JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets),
-                                         JetTagging::Parameters(JetTagging::DeepJet,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets)};
-    mcCorr->SetJetTaggingParameters(jtps);
-  }
+  vector<JetTagging::Parameters> jtps={JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Tight,JetTagging::mujets,JetTagging::mujets),
+				       JetTagging::Parameters(JetTagging::DeepJet,JetTagging::Tight,JetTagging::mujets,JetTagging::mujets)};
+  mcCorr->SetJetTaggingParameters(jtps);
+
   if(fChain->GetListOfFiles()->GetEntries()){
     TString filename=fChain->GetListOfFiles()->At(0)->GetTitle();
     if(filename.Contains("SkimTree_")) IsSkimmed=true;
@@ -88,7 +87,19 @@ void AFBAnalyzer::executeEvent(){
 
       //////////////// Fill LHE,Gen hists //////////////////////
       if(IsNominalRun&&!IsSkimmed&&!HasFlag("ALL")){
+	TLorentzVector lhe_Z=lhe_l0+lhe_l1;
+	double lhe_Zmass=lhe_Z.M();
+	double lhe_Zrap=lhe_Z.Rapidity();
+	double lhe_Zpt=lhe_Z.Pt();
 	FillHistsAFB(p.prefix,"lhe_","",(Particle*)&lhe_l0,(Particle*)&lhe_l1,map_weight);
+	FillHist(p.prefix+"lhe_costhetaCS",lhe_Zmass,lhe_Zrap,lhe_Zpt,GetCosThetaCS(&lhe_l0,&lhe_l1,0),map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	if(lhe_j0.Pt()){
+	  FillHist(p.prefix+"lhe_costhetaR",lhe_Zmass,lhe_Zrap,lhe_Zpt,GetCosThetaR(&lhe_l0,&lhe_l1,&lhe_j0,0),map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	  FillHist(p.prefix+"lhe_costhetaT",lhe_Zmass,lhe_Zrap,lhe_Zpt,GetCosThetaT(&lhe_l0,&lhe_l1,&lhe_j0,0),map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	}
+	if(lhe_l0.Pt()>p.c.lepton0pt&&lhe_l1.Pt()>p.c.lepton1pt&&fabs(lhe_l0.Eta())<letacut&&fabs(lhe_l1.Eta())<letacut){
+	  FillHistsAFB(p.prefix,"lhefid_","",(Particle*)&lhe_l0,(Particle*)&lhe_l1,map_weight);
+	}
 	FillHistsAFB(p.prefix,"gen_","",(Particle*)&gen_l0,(Particle*)&gen_l1,map_weight);
 	FillHistsAFB(p.prefix,"gen_","_dressed",(Particle*)&gen_l0_dressed,(Particle*)&gen_l1_dressed,map_weight);
 	FillHistsAFB(p.prefix,"gen_","_bare",(Particle*)&gen_l0_bare,(Particle*)&gen_l1_bare,map_weight);
@@ -102,6 +113,10 @@ void AFBAnalyzer::executeEvent(){
 	  FillHistsAFB(p.prefix,"genfid_","_bare",(Particle*)&gen_l0_bare,(Particle*)&gen_l1_bare,map_weight);
 	}
 	FillHist(p.prefix+"gen_costhetaCS_correct",gen_Zmass,gen_Zrap,gen_Zpt,gen_cost_correct,map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+	FillHist(p.prefix+"gen_nPU_noPUweight",gen_Zmass,gen_Zrap,gen_Zpt,nPileUp,p.w.lumiweight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,100,0,100);
+	FillHist(p.prefix+"gen_nPU",gen_Zmass,gen_Zrap,gen_Zpt,nPileUp,p.w.lumiweight*p.w.PUweight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,100,0,100);
+	FillHist(p.prefix+"gen_nPU_PUweight_up",gen_Zmass,gen_Zrap,gen_Zpt,nPileUp,p.w.lumiweight*p.w.PUweight_up,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,100,0,100);
+	FillHist(p.prefix+"gen_nPU_PUweight_down",gen_Zmass,gen_Zrap,gen_Zpt,nPileUp,p.w.lumiweight*p.w.PUweight_down,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,100,0,100);
       }
     }
   }
@@ -131,9 +146,10 @@ void AFBAnalyzer::executeEvent(){
 SMPAnalyzerCore::Parameter AFBAnalyzer::MakeParameter(TString key){
   Parameter p=SMPAnalyzerCore::MakeParameter(key);
 
+  p.weightbit=0;
   if(IsNominalRun) p.weightbit|=NominalWeight;
-  if(HasFlag("SYS")&&!IsDATA) p.weightbit|=SystematicWeight;
-  if(HasFlag("PDFSYS")&&!IsDATA) p.weightbit|=PDFWeight;
+  if(HasFlag("SYS")&&!IsDATA&&(p.channel=="ee"||p.channel=="mm")) p.weightbit|=SystematicWeight;
+  if(HasFlag("PDFSYS")&&!IsDATA&&(p.channel=="ee"||p.channel=="mm")) p.weightbit|=PDFWeight;
 
   if(HasFlag("bjet")) p.prefix+="bjet/";
   else if(HasFlag("nobjet")) p.prefix+="nobjet/";
@@ -148,15 +164,16 @@ bool AFBAnalyzer::PassSelection(Parameter& p){
   }
 
   int n_bjet=0;
-  if(p.prefix.Contains("bjet")||p.prefix.Contains("nobjet")){
-    std::vector<Jet> jets=GetJets("tightLepVeto",30,2.7);
-    std::sort(jets.begin(),jets.end(),PtComparing);
+  std::vector<Jet> jets=GetJets("tightLepVeto",30,2.7);
+  std::sort(jets.begin(),jets.end(),PtComparing);
 
-    JetTagging::Parameters jtp = JetTagging::Parameters(JetTagging::DeepCSV,JetTagging::Medium,JetTagging::mujets,JetTagging::mujets);
-    for(const auto& jet:jets)
-      if(mcCorr->IsBTagged_2a(jtp,jet))
-	n_bjet++;
+  JetTagging::Parameters jtp = JetTagging::Parameters(JetTagging::DeepJet,JetTagging::Tight,JetTagging::mujets,JetTagging::mujets);
+  for(const auto& jet:jets)
+    if(mcCorr->IsBTagged_2a(jtp,jet))
+      n_bjet++;
+  p.intmap["nbjet"]=n_bjet;
     
+  if(p.prefix.Contains("bjet")||p.prefix.Contains("nobjet")){
     if(p.prefix.Contains("bjet")&&!n_bjet) return false;
     if(p.prefix.Contains("nobjet")&&n_bjet) return false;
     if(IsNominalRun) FillCutflow(p.prefix+p.hprefix+"cutflow","BJetCut",p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight);
@@ -170,57 +187,48 @@ void AFBAnalyzer::FillHists(Parameter& p){
   ///////////////////////map_weight//////////////////
   map<TString,double> map_weight;
   if(p.weightbit&NominalWeight){
-    map_weight[""]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF;
-    map_weight["_noCFSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_CFSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF_up;
-    map_weight["_CFSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*p.w.CFSF_down;
+    map_weight[""]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
   }
   if(p.weightbit&SystematicWeight){
-    map_weight["_noPUweight"]=p.w.lumiweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_PUweight_up"]=p.w.lumiweight*p.w.PUweight_up*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_PUweight_down"]=p.w.lumiweight*p.w.PUweight_down*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    
-    map_weight["_noprefireweight"]=p.w.lumiweight*p.w.PUweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_prefireweight_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight_up*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_prefireweight_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight_down*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    
-    map_weight["_nozptweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    
-    map_weight["_noz0weight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-
-    map_weight["_nocosthetaweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_costhetaweight_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight_up*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_costhetaweight_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight_down*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    
-    map_weight["_noefficiencySF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight;
-    
-    map_weight["_noRECOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_RECOSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF_up*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_RECOSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF_down*p.w.IDSF*p.w.ISOSF*p.w.triggerSF;
-    
-    map_weight["_noIDSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_IDSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF_up*p.w.ISOSF*p.w.triggerSF;
-    map_weight["_IDSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF_down*p.w.ISOSF*p.w.triggerSF;
-    
-    map_weight["_noISOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.triggerSF;
-    map_weight["_ISOSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF_up*p.w.triggerSF;
-    map_weight["_ISOSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF_down*p.w.triggerSF;
-    
-    map_weight["_notriggerSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF;
-    map_weight["_triggerSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF_up;
-    map_weight["_triggerSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF_down;
-    
+    if(!IsDATA){
+      map_weight["_noPUweight"]=p.w.lumiweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_PUweight_up"]=p.w.lumiweight*p.w.PUweight_up*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_PUweight_down"]=p.w.lumiweight*p.w.PUweight_down*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      
+      map_weight["_noprefireweight"]=p.w.lumiweight*p.w.PUweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_prefireweight_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight_up*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_prefireweight_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight_down*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      
+      map_weight["_nozptweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      
+      map_weight["_noz0weight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      
+      map_weight["_nocosthetaweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_costhetaweight_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight_up*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_costhetaweight_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight_down*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      
+      map_weight["_noefficiencySF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.CFSF;
+      
+      map_weight["_noelectronRECOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_noIDSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_weight["_nomuonISOSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.triggerSF*p.w.CFSF;      
+      map_weight["_notriggerSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.CFSF;
+      
+      map_weight["_noCFSF"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF;
+      map_weight["_CFSF_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF_up;
+      map_weight["_CFSF_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF_down;
+    }
   }
   if(p.weightbit&PDFWeight){
     for(unsigned int i=0;i<PDFWeights_Scale->size();i++){
-      map_weight[Form("_scalevariation%d",i)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*PDFWeights_Scale->at(i);
+      map_weight[Form("_scalevariation%d",i)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*PDFWeights_Scale->at(i);
     }
     for(unsigned int i=0;i<PDFWeights_Error->size();i++){
-      map_weight[Form("_pdf%d",i)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*PDFWeights_Error->at(i);
+      map_weight[Form("_pdf%d",i)]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*PDFWeights_Error->at(i);
     }
     if(PDFWeights_AlphaS->size()==2){
-      map_weight["_alphaS_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*PDFWeights_AlphaS->at(0);
-      map_weight["_alphaS_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.RECOSF*p.w.IDSF*p.w.ISOSF*p.w.triggerSF*PDFWeights_AlphaS->at(1);
+      map_weight["_alphaS_up"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*PDFWeights_AlphaS->at(0);
+      map_weight["_alphaS_down"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*PDFWeights_AlphaS->at(1);
     }
   }
   
@@ -235,6 +243,20 @@ void AFBAnalyzer::FillHists(Parameter& p){
       if(!truth_l0.IsEmpty()&&!truth_l1.IsEmpty()) 
 	FillHistsAFB(p.prefix,"truth_",p.suffix,(Particle*)&truth_l0,(Particle*)&truth_l1,map_weight);
       //else cout<<"no matching"<<endl;
+    }
+    // pileup related variables
+    if(IsNominalRun){
+      TLorentzVector dilepton=*p.lepton0+*p.lepton1;
+      double dimass=dilepton.M();
+      double dirap=dilepton.Rapidity();
+      double dipt=dilepton.Pt();
+      map<TString,double> map_PUweight;
+      map_PUweight[""]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_PUweight["_noPUweight"]=p.w.lumiweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_PUweight["_PUweight_up"]=p.w.lumiweight*p.w.PUweight_up*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      map_PUweight["_PUweight_down"]=p.w.lumiweight*p.w.PUweight_down*p.w.prefireweight*p.w.zptweight*p.w.z0weight*costhetaweight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF*p.w.CFSF;
+      FillHist(p.prefix+p.hprefix+"nPV"+p.suffix,dimass,dirap,dipt,nPV,map_PUweight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,100,0,100);
+      FillHist(p.prefix+p.hprefix+"rho"+p.suffix,dimass,dirap,dipt,Rho,map_PUweight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,50,0,50);
     }
   }
 }
@@ -288,52 +310,96 @@ double AFBAnalyzer::GetCosThetaCS(const Particle *p0,const Particle *p1,int dire
   if(direction==0) direction=dilepton.Pz()>0?1:-1;
   return direction*2*(l0pp*l1pm-l0pm*l1pp)/sqrt(dimass*dimass*(dimass*dimass+dipt*dipt));
 } 
-double AFBAnalyzer::GetCosTheta(const vector<Lepton*>& leps,const vector<Jet>& jets,TString option,double fcut){
-  TLorentzVector *l0,*l1;
-  if(leps.at(0)->Charge()<0&&leps.at(1)->Charge()>0){
-    l0=leps.at(0);
-    l1=leps.at(1);
-  }else if(leps.at(0)->Charge()>0&&leps.at(1)->Charge()<0){
-    l0=leps.at(1);
-    l1=leps.at(0);
+double AFBAnalyzer::GetCosThetaR(const Particle *l0,const Particle *l1,const Particle *j0,int direction){
+  const Particle *lm=NULL,*lp=NULL;
+  if(l0->Charge()<0&&l1->Charge()>0){
+    lm=l0; lp=l1;
+  }else if(l0->Charge()>0&&l1->Charge()<0){
+    lm=l1; lp=l0;
   }else{
     if(gRandom->Rndm()<0.5){
-      l0=leps.at(0);
-      l1=leps.at(1);
+      lm=l0; lp=l1;
     }else{
-      l0=leps.at(1);
-      l1=leps.at(0);
-    }      
-  }
-  TLorentzVector dilepton=*l0+*l1;
-  TLorentzVector j0;
-  if(jets.size()>0){
-    if((jets[0]+dilepton).Pt()/dilepton.Pt()<fcut)
-      j0=jets[0];
-  }
-  TLorentzVector system=dilepton+j0;
-  double direction=dilepton.Pz()/fabs(dilepton.Pz());
-  double systemmass=system.M();
-  //double systempt=system.Pt();
-  double systempz=system.Pz();
-  TLorentzVector p0(0,0,(sqrt(systemmass*systemmass+systempz*systempz)+systempz)/2.,(sqrt(systemmass*systemmass+systempz*systempz)+systempz)/2.);
-  TLorentzVector p1(0,0,-(sqrt(systemmass*systemmass+systempz*systempz)-systempz)/2.,(sqrt(systemmass*systemmass+systempz*systempz)-systempz)/2.);
-  TLorentzVector particle=*l0;
-  TVector3 b1=system.BoostVector();
-  dilepton.Boost(-b1);particle.Boost(-b1);
-  p0.Boost(-b1);p1.Boost(-b1);j0.Boost(-b1);
-  if(j0.E()>0){
-    if(p0.Angle(j0.Vect())<p1.Angle(j0.Vect())){
-      if(option.Contains("C")) p0-=j0;
-      if(option.Contains("B")) direction=-1;
-    }else{
-      if(option.Contains("C")) p1-=j0;
-      if(option.Contains("B")) direction=1;
+      lm=l1; lp=l0;
     }
   }
-  TVector3 b2=dilepton.BoostVector();
-  p0.Boost(-b2);p1.Boost(-b2);particle.Boost(-b2);
-  return direction*cos(particle.Angle(p0.Vect().Unit()-p1.Vect().Unit()));
+  if(j0->E()){
+    int jid=0;
+    if(j0->InheritsFrom("LHE")) jid=((LHE*)j0)->ID();
+    if(jid==22){
+      TLorentzVector dilepton=*lm+*lp;
+      TLorentzVector jet=*j0;
+      TLorentzVector system=dilepton+jet;
+      TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+      TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+      TLorentzVector lepton=*lm;
+      TVector3 b1=system.BoostVector();
+      dilepton.Boost(-b1);lepton.Boost(-b1);
+      p0.Boost(-b1);p1.Boost(-b1);jet.Boost(-b1);
+      if(p0.Angle(jet.Vect())<p1.Angle(jet.Vect())){
+	p0-=jet;
+      }else{
+	p1-=jet;
+      }
+      TVector3 b2=dilepton.BoostVector();
+      p0.Boost(-b2);p1.Boost(-b2);lepton.Boost(-b2);
+      if(direction==0) direction=system.Pz()/fabs(system.Pz());
+      return direction*cos(lepton.Angle(p0.Vect().Unit()-p1.Vect().Unit()));
+    }else if(0<jid&&jid<=6){
+      return ((*lm-*lp)*(*j0))/((*lm+*lp)*(*j0));
+    }else if(-6<=jid&&jid<0){
+      return -1*((*lm-*lp)*(*j0))/((*lm+*lp)*(*j0));
+    }
+  }
+  return GetCosThetaCS(l0,l1,direction);
+}
+double AFBAnalyzer::GetCosThetaT(const Particle *l0,const Particle *l1,const Particle *j0,int direction){
+  const Particle *lm=NULL,*lp=NULL;
+  if(l0->Charge()<0&&l1->Charge()>0){
+    lm=l0; lp=l1;
+  }else if(l0->Charge()>0&&l1->Charge()<0){
+    lm=l1; lp=l0;
+  }else{
+    if(gRandom->Rndm()<0.5){
+      lm=l0; lp=l1;
+    }else{
+      lm=l1; lp=l0;
+    }
+  }
+  if(j0->E()){
+    int jid=0;
+    if(j0->InheritsFrom("LHE")) jid=((LHE*)j0)->ID();
+    TLorentzVector dilepton=*lm+*lp;
+    TLorentzVector jet=*j0;
+    TLorentzVector system=dilepton+jet;
+    TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+    TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+    TLorentzVector lepton=*lm;
+    TVector3 b1=system.BoostVector();
+    dilepton.Boost(-b1);lepton.Boost(-b1);
+    p0.Boost(-b1);p1.Boost(-b1);jet.Boost(-b1);
+    int temp_direction=direction;
+    if(p0.Angle(jet.Vect())<p1.Angle(jet.Vect())){
+      p0-=jet;
+      if(temp_direction==0) direction=-1;
+    }else{
+      p1-=jet;
+      if(temp_direction==0) direction=+1;
+    }
+    TVector3 b2=dilepton.BoostVector();
+    p0.Boost(-b2);p1.Boost(-b2);lepton.Boost(-b2);
+    if(direction==0){
+      if(jid==22){
+	direction=system.Pz()/fabs(system.Pz());
+      }else if(0<jid&&jid<=6){
+	direction=temp_direction;
+      }else if(-6<=jid&&jid<0){
+	direction=-temp_direction;
+      }
+      return direction*cos(lepton.Angle(p0.Vect().Unit()-p1.Vect().Unit()));
+    }
+  }
+  return GetCosThetaCS(l0,l1,direction);
 }
 void AFBAnalyzer::FillHistsToy(TString pre,TString hpre,TString suf,Particle* l0,Particle* l1,map<TString,double> map_weight){
   int n_toy=toy_random.size();
@@ -346,10 +412,10 @@ void AFBAnalyzer::FillHistsAFB(TString pre,TString hpre,TString suf,Particle* l0
   double dipt=dilepton.Pt();
 
   double cost=GetCosThetaCS(l0,l1);
-  double h=0.5*pow(dipt/dimass,2)/(1+pow(dipt/dimass,2))*(1-3*cost*cost);
-  double den_weight=0.5*fabs(cost)/pow(1+cost*cost+h,2);
-  double num_weight=0.5*cost*cost/pow(1+cost*cost+h,3);
   FillHist(pre+hpre+"costhetaCS"+suf,dimass,dirap,dipt,cost,map_weight,afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
+  //double h=0.5*pow(dipt/dimass,2)/(1+pow(dipt/dimass,2))*(1-3*cost*cost);
+  //double den_weight=0.5*fabs(cost)/pow(1+cost*cost+h,2);
+  //double num_weight=0.5*cost*cost/pow(1+cost*cost+h,3);
   //FillHist(pre+hpre+"costhetaCS_den"+suf,dimass,dirap,dipt,cost,Multiply(map_weight,den_weight),afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
   //FillHist(pre+hpre+"costhetaCS_num"+suf,dimass,dirap,dipt,cost,Multiply(map_weight,num_weight),afb_mbinnum,(double*)afb_mbin,afb_ybinnum,(double*)afb_ybin,afb_ptbinnum,(double*)afb_ptbin,20,-1,1);
 
@@ -367,8 +433,6 @@ void AFBAnalyzer::FillHistsAFB(TString pre,TString hpre,TString suf,Particle* l0
     if(!hpre.Contains("gen")&&!hpre.Contains("lhe")&&!hpre.Contains("truth")){
       FillHist(pre+hpre+"z0"+suf,dimass,dirap,dipt,vertex_Z,map_weight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,120,-15,15);
       FillHist(pre+hpre+"met"+suf,dimass,dirap,dipt,pfMET_Type1_pt,map_weight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,100,0,200);  
-      FillHist(pre+hpre+"nPV"+suf,dimass,dirap,dipt,nPV,map_weight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,60,0,60);  
-      FillHist(pre+hpre+"nPileUp"+suf,dimass,dirap,dipt,nPileUp,map_weight,grid_mbinnum,(double*)grid_mbin,grid_ybinnum,(double*)grid_ybin,grid_ptbinnum,(double*)grid_ptbin,60,0,60);  
     }
   }
 }
@@ -511,4 +575,46 @@ double AFBAnalyzer::GetCosThetaWeight(double mass,double pt,double cost,TString 
     val*=GetBinContentUser(it->second,mass,pt,cost,0);
   if(val==0) val=1.;
   return val;
+}
+void AFBAnalyzer::test(){
+  vector<LHE> lhes=GetLHEs();
+  for(auto lhe:lhes) lhe.Print();
+  if(lhe_j0.E()){
+    cout<<"Jet event"<<endl;
+    TLorentzVector z,j,system;
+    system=lhe_l0+lhe_l1+lhe_j0;
+    cout<<"system:";system.Print();
+    TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+    TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+    j=lhe_j0;
+    TVector3 b=system.BoostVector();
+    p0.Boost(-b);
+    p1.Boost(-b);
+    j.Boost(-b);
+    (-b).Print();
+    cout<<"After Boost"<<endl;
+    p0.Print();
+    p1.Print();
+    j.Print();
+    
+    cout<<"JetID: "<<lhe_j0.ID()<<" Angle0: "<<p0.Angle(j.Vect())<<" Angle1:"<<p1.Angle(j.Vect())<<endl;
+  }else{
+    cout<<"No Jet"<<endl;
+    TLorentzVector z,system,l;
+    system=lhe_l0+lhe_l1;
+    cout<<"system:";system.Print();
+    TLorentzVector p0(0,0,0.5*system.M()*exp(system.Rapidity()),0.5*system.M()*exp(system.Rapidity()));
+    TLorentzVector p1(0,0,-0.5*system.M()*exp(-system.Rapidity()),0.5*system.M()*exp(-system.Rapidity()));
+    l=lhe_l0;
+    TVector3 b=system.BoostVector();
+    p0.Boost(-b);
+    p1.Boost(-b);
+    l.Boost(-b);
+    cout<<"After Boost"<<endl;
+    p0.Print();
+    p1.Print();
+    l.Print();
+    cout<<"CosTheta: "<<cos(l.Angle(p0.Vect().Unit()-p1.Vect().Unit()))<<" CosThetaCS: "<<GetCosThetaCS(&lhe_l0,&lhe_l1)<<endl;
+    
+  }
 }

@@ -27,14 +27,14 @@ public:
 
   ~Particle();
 
-  void SetCharge(int q);
-  inline int Charge() const {return j_Charge;}
+  void SetCharge(double q);
+  inline double Charge() const {return j_Charge;}
 
   //==== Print four vector
   virtual void Print();
 
 private:
-  int j_Charge;
+  double j_Charge;
 
   ClassDef(Particle,1)
 

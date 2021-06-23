@@ -46,7 +46,7 @@ Particle::~Particle()
 {
 }
 
-void Particle::SetCharge(int q){
+void Particle::SetCharge(double q){
   j_Charge = q;
 }
 
