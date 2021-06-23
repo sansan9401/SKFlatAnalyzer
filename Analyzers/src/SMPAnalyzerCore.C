@@ -513,6 +513,7 @@ void SMPAnalyzerCore::SetupRoccoR(){
   else cout<<"[SMPAnalyzerCore::SetupRoccoR] no "+rocpath<<endl;
   TString erashort=GetEraShort();
   TString rocelepath=datapath+"/"+GetEra()+"/RoccoR/e_"+erashort(2,3)+"UL.txt";
+  if(DataYear==2016) rocelepath=datapath+"/"+GetEra()+"/RoccoR/e_"+erashort(2,3)+"UL_1.txt";
   if(IsExists(rocelepath)) rocele=new Aepcor(rocelepath.Data());
   else cout<<"[SMPAnalyzerCore::SetupRoccoR] no "+rocelepath<<endl;  
 }
@@ -736,7 +737,6 @@ void SMPAnalyzerCore::GetDYGenParticles(const vector<Gen>& gens,Gen& parton0,Gen
       vector<int> history=TrackGenSelfHistory(*photon,gens);
       if(gens[history.at(1)].PID()==l0.PID()) l0+=*photon;
       else if(gens[history.at(1)].PID()==l1.PID()) l1+=*photon;
-      //else if(MCSample.Contains("MiNNLO")){ // FIXME: this line needed due to wierd 125GeV peak in mg. please check
       else if(gens[history.at(1)].PID()==23){ // for minnlo+photos
 	if(photon->DeltaR(l0)<photon->DeltaR(l1)) l0+=*photon;
 	else l1+=*photon;
@@ -1074,15 +1074,9 @@ SMPAnalyzerCore::Parameter SMPAnalyzerCore::MakeParameter(TString channel,TStrin
   p.w.zptweight=1;
   if(!IsDATA){
     p.w.lumiweight*=weight_norm_1invpb*_event.MCweight()*_event.GetTriggerLumi("Full");
-    if(DataYear==2018){ // FIXME bad PU weight for 2018, save nominal at _up for test
-      p.w.PUweight=1.;
-      p.w.PUweight_up=mcCorr->GetPileUpWeight(nPileUp,0);
-      p.w.PUweight_down=mcCorr->GetPileUpWeight(nPileUp,-1);
-    }else{
-      p.w.PUweight=mcCorr->GetPileUpWeight(nPileUp,0);
-      p.w.PUweight_up=mcCorr->GetPileUpWeight(nPileUp,1);
-      p.w.PUweight_down=mcCorr->GetPileUpWeight(nPileUp,-1);
-    }
+    p.w.PUweight=mcCorr->GetPileUpWeight(nPileUp,0);
+    p.w.PUweight_up=mcCorr->GetPileUpWeight(nPileUp,1);
+    p.w.PUweight_down=mcCorr->GetPileUpWeight(nPileUp,-1);
     p.w.z0weight=GetZ0Weight(vertex_Z);
     if(DataYear<2018){
       p.w.prefireweight=L1PrefireReweight_Central;

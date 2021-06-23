@@ -9,9 +9,9 @@ def evaluate(args):
     plotter=ZpeakPlotter("data "+args.dykey)
     rt.Verbosity=0
 
-    ptbins=[10,30,40,50,70,100,200]
+    ptbins=[10,30,40,50,70,90,200]
     #ptbins=[10,200]
-    etabins=[0.0,1.0,1.4,1.7,2.0,2.5]
+    etabins=[0.0,1.0,1.5,1.7,2.0,2.5]
     #etabins=[0,1.5,2.5]
     cfdata=rt.TH2D("cfdata","cfdata",len(etabins)-1,array('d',etabins),len(ptbins)-1,array('d',ptbins));
     cfmc=rt.TH2D("cfmc","cfmc",len(etabins)-1,array('d',etabins),len(ptbins)-1,array('d',ptbins));
