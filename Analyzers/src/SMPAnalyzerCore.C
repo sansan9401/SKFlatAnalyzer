@@ -263,10 +263,10 @@ void SMPAnalyzerCore::FillHist(TString histname,
 void SMPAnalyzerCore::FillHist(TString histname,
                             Double_t value_x, Double_t value_y, Double_t value_z, Double_t value_u,
                             Double_t weight,
-                            Int_t n_binx, Double_t *xbins,
-                            Int_t n_biny, Double_t *ybins,
-                            Int_t n_binz, Double_t *zbins,
-                            Int_t n_binu, Double_t *ubins){
+                            Int_t n_binx, const Double_t *xbins,
+                            Int_t n_biny, const Double_t *ybins,
+                            Int_t n_binz, const Double_t *zbins,
+                            Int_t n_binu, const Double_t *ubins){
 
   TH4D *this_hist = GetHist4D(histname);
   if( !this_hist ){
@@ -282,9 +282,9 @@ void SMPAnalyzerCore::FillHist(TString histname,
 void SMPAnalyzerCore::FillHist(TString histname,
                             Double_t value_x, Double_t value_y, Double_t value_z, Double_t value_u,
                             Double_t weight,
-                            Int_t n_binx, Double_t *xbins,
-                            Int_t n_biny, Double_t *ybins,
-                            Int_t n_binz, Double_t *zbins,
+                            Int_t n_binx, const Double_t *xbins,
+                            Int_t n_biny, const Double_t *ybins,
+                            Int_t n_binz, const Double_t *zbins,
 			    Int_t n_binu, Double_t u_min, Double_t u_max){
 
   TH4D *this_hist = GetHist4D(histname);
