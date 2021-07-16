@@ -1,9 +1,10 @@
 import os
 import scipy.integrate as integrate
 from scipy.optimize import minimize
-import ROOT as rt
 from math import exp,sqrt,log
 from array import array
+import ROOT as rt
+rt.gROOT.SetBatch(True)
 rt.gROOT.LoadMacro("./Plotter/AFBPlotter.cc")
 
 def Short(era):
@@ -57,64 +58,137 @@ def GetHist(args,ientry,mrange=None,yrange=None,zptweight=False,gen=False):
                         sf=GetZptWeight(args,m,y,pt)
                         hist.SetBinContent(ix,iy,iz,sf*hist.GetBinContent(ix,iy,iz))
                         hist.SetBinError(ix,iy,iz,sf*hist.GetBinError(ix,iy,iz))
-                            
-    hist1d=hist.ProjectionZ("pt",ixmin,ixmax,iymin,iymax)
+
+    name="pt"
+    if ientry==0: name="data_"+name
+    else: name="dy_"+name
+    if gen: name="gen_"+name
+    if zptweight: name+="_zpt"
+    hist1d=hist.ProjectionZ(name,ixmin,ixmax,iymin,iymax)
+    hist1d.SetDirectory(0)
     hist.Delete()
     return hist1d
-    
-def GetDataPt(args): return GetHist(args,0,"pt")
-def GetDYPt(args): return GetHist(args,1,"pt")
-def GetDYGenPt(args): return GetHist(args,1,"genpt")
 
-def FuncZptWeight(xx,par):
-    #npar=6
-    kk=[0,20,50,200]
+def FuncZptWeightG(xx,par):
+    #npar_=14
+    kk=[0,2,4,7,10,15,20,30,40,60,100,200,400]
     x=xx[0]
-    aa=[]
-    bb=[]
-    cc=[]
-    dd=[]
-    for i in range(len(kk)-1):
-        if i==0:
-            aa+=[par[0]]
-            bb+=[par[1]]
-            cc+=[par[2]]
-            dd+=[par[3]]
-        else:
-            aa+=[aa[i-1]+bb[i-1]*(kk[i]-kk[i-1])+cc[i-1]*(kk[i]-kk[i-1])**2+dd[i-1]*(kk[i]-kk[i-1])**3]
-            bb+=[bb[i-1]+2*cc[i-1]*(kk[i]-kk[i-1])+3*dd[i-1]*(kk[i]-kk[i-1])**2]
-            #cc+=[par[2*i+2]]
-            cc+=[2*cc[i-1]+6*dd[i-1]*(kk[i]-kk[i-1])]
-            #dd+=[par[2*i+3]]
-            dd+=[par[i+3]]
-        if x<kk[i+1]:
+    aa=[par[i] for i in range(len(kk))]
+    bb=[None]*(len(kk)-1)+[par[len(kk)]]
+    cc=[None]*(len(kk)-1)+[0]
+    dd=[None]*(len(kk)-1)+[0]
+    for i in range(len(kk)-1,-1,-1):
+        if x>=kk[i] or i==0:
             return aa[i]+bb[i]*(x-kk[i])+cc[i]*(x-kk[i])**2+dd[i]*(x-kk[i])**3
-    return (aa[-1]+bb[-1]*(kk[-1]-kk[-2])+cc[-1]*(kk[-1]-kk[-2])**2+dd[-1]*(kk[-1]-kk[-2])**3)+(bb[-1]+2*cc[-1]*(kk[-1]-kk[-2])+3*dd[-1]*(kk[-1]-kk[-2])**2)*(x-kk[-1])
+        r=kk[i]-kk[i-1]
+        dd[i-1]=cc[i]/r-bb[i]/r**2+(aa[i]-aa[i-1])/r**3
+        cc[i-1]=cc[i]-3*dd[i-1]*r
+        bb[i-1]=bb[i]-2*cc[i-1]*r-3*dd[i-1]*r**2
+    return None
+
+def FuncZptWeightY(xx,par):
+    #npar_y=7
+    kk=[0,10,20,40,60,200]
+    x=xx[0]
+    aa=[par[i] for i in range(len(kk))]
+    bb=[None]*(len(kk)-1)+[par[len(kk)]]
+    cc=[None]*(len(kk)-1)+[0]
+    dd=[None]*(len(kk)-1)+[0]
+    for i in range(len(kk)-1,-1,-1):
+        if x>=kk[i] or i==0:
+            return aa[i]+bb[i]*(x-kk[i])+cc[i]*(x-kk[i])**2+dd[i]*(x-kk[i])**3
+        r=kk[i]-kk[i-1]
+        dd[i-1]=cc[i]/r-bb[i]/r**2+(aa[i]-aa[i-1])/r**3
+        cc[i-1]=cc[i]-3*dd[i-1]*r
+        bb[i-1]=bb[i]-2*cc[i-1]*r-3*dd[i-1]*r**2
+    return None
+
+def FuncZptWeightM(xx,par):
+    #npar_m=8
+    kk=[0,5,10,20,30,55,100]
+    x=xx[0]
+    aa=[par[i] for i in range(len(kk))]
+    bb=[None]*(len(kk)-1)+[par[len(kk)]]
+    cc=[None]*(len(kk)-1)+[0]
+    dd=[None]*(len(kk)-1)+[0]
+    for i in range(len(kk)-1,-1,-1):
+        if x>=kk[i] or i==0:
+            return aa[i]+bb[i]*(x-kk[i])+cc[i]*(x-kk[i])**2+dd[i]*(x-kk[i])**3
+        r=kk[i]-kk[i-1]
+        dd[i-1]=cc[i]/r-bb[i]/r**2+(aa[i]-aa[i-1])/r**3
+        cc[i-1]=cc[i]-3*dd[i-1]*r
+        bb[i-1]=bb[i]-2*cc[i-1]*r-3*dd[i-1]*r**2
+    return None
+
+def Scale(func,sf):
+    if not func.InheritsFrom("TF1"):
+        print "cannot scaling "+func.ClassName()
+        return
+    for i in range(func.GetNpar()):
+        func.SetParameter(i,func.GetParameter(i)*sf)
+        func.SetParError(i,func.GetParError(i)*sf)
 
 def SetupZptWeight(args):
-    npar=6
-    mbins=[52,80,90,100,400]
-    ybins=[0.0,0.4,1.0,1.6,2.4]
-    #mbins=[80,90,100]
-    #ybins=[0,1.2,2.4]
-    args.hbin=rt.TH2D("bins","bins",len(mbins)-1,array("d",mbins),len(ybins)-1,array("d",ybins))
-    args.hbin.SetDirectory(0)
-    args.zptweight=[None]*args.hbin.GetNcells()
-    for i in range(1,args.hbin.GetNbinsX()+1):
-        for j in range(1,args.hbin.GetNbinsY()+1):
-            this_bin=args.hbin.GetBin(i,j)
-            args.zptweight[this_bin]=rt.TF1("zptweight{}".format(this_bin),FuncZptWeight,0,650,npar)
-            for k in range(npar):
-                args.zptweight[this_bin].SetParameter(k,0)
-            args.zptweight[this_bin].SetParameter(0,1)
+    args.npar_g=14
+    args.npar_y=7
+    args.npar_m=8
+
+    if args.input:
+        args.input=rt.TFile(args.input)
+            
+    ## step 1 global correction
+    args.zptweight_g=rt.TF1("zptweight_g",FuncZptWeightG,0,650,args.npar_g)
+    args.zptweight_g.SetNpx(1000)
+    if args.input:
+        args.zptweight_g.SetParameters(args.input.Get("zptweight_g").GetParameters())
+    else:
+        for i in range(args.npar_g-1):
+            args.zptweight_g.SetParameter(i,1)
+
+    ## step 2 rapidity-dependent correction
+    if args.input:
+        args.yaxis=args.input.Get("yaxis")
+    else:
+        ybins=[0.0,0.4,1.0,1.6,2.4]
+        args.yaxis=rt.TAxis(len(ybins)-1,array("d",ybins))
+        args.yaxis.SetName("yaxis")
+
+    args.zptweight_y=[None]*(args.yaxis.GetNbins()+2)
+    for i in range(1,args.yaxis.GetNbins()+1):
+        args.zptweight_y[i]=rt.TF1("zptweight_y{}".format(i),FuncZptWeightY,0,650,args.npar_y)
+        args.zptweight_y[i].SetNpx(1000)
+        if args.input:
+            args.zptweight_y[i].SetParameters(args.input.Get("zptweight_y{}".format(i)).GetParameters())
+        else:
+            for ip in range(args.npar_y-1):
+                args.zptweight_y[i].SetParameter(ip,1)
+        args.zptweight_y[i].FixParameter(args.npar_y-1,0)
+
+    ## step 3 mass-dependent correction
+    #args.input=None ## FIXME temp for m study
+    if args.input:
+        args.maxis=args.input.Get("maxis")
+    else:
+        mbins=[52,80,90,100,150]
+        args.maxis=rt.TAxis(len(mbins)-1,array("d",mbins))
+        args.maxis.SetName("maxis")
+    args.zptweight_m=[None]*(args.maxis.GetNbins()+2)
+    for i in range(1,args.maxis.GetNbins()+1):
+        args.zptweight_m[i]=rt.TF1("zptweight_m{}".format(i),FuncZptWeightM,0,650,args.npar_m)
+        args.zptweight_m[i].SetNpx(1000)
+        if args.input: 
+            args.zptweight_m[i].SetParameters(args.input.Get("zptweight_m{}".format(i)).GetParameters())
+        else:
+            for ip in range(args.npar_m-1):
+                args.zptweight_m[i].SetParameter(ip,1)
+        args.zptweight_m[i].FixParameter(args.npar_m-1,0)
 
 def CheckZptWeight(args):
-    cs=[]
-    gs=[]
-    ms=[60,90,300]
-    ys=[0,1,2,4]
+    ms=[52,80,100,150]
+    ys=[0,0.8,1.6,2.4]
     for im in range(len(ms)):
-        cs+=[rt.TCanvas()]
+        c=rt.TCanvas()
+        gs=[]
         for iy in range(len(ys)):
             npoints=400
             xpoints=[i for i in range(npoints)]
@@ -127,78 +201,119 @@ def CheckZptWeight(args):
             else:
                 gs[-1].SetLineColor(iy+1)
                 gs[-1].Draw("same l")
-    cs+=[rt.TCanvas()]
-    for im in range(len(ms)):
-        npoints=400
-        xpoints=[i for i in range(npoints)]
-        ypoints=[GetZptWeight(args,ms[im],0,x) for x in xpoints]
-        gs+=[rt.TGraph(npoints,array("d",xpoints),array("d",ypoints))]
-        if im==0:
-            gs[-1].Draw("al")
-            gs[-1].SetTitle("zptweight at y=0")
-            gs[-1].GetYaxis().SetRangeUser(0.5,1.5)
-        else:
-            gs[-1].SetLineColor(im+1)
-            gs[-1].Draw("same l")
-    cs+=[rt.TCanvas()]
-    hframe=cs[-1].DrawFrame(0,0.5,400,1.5)
-    for i in range(len(args.zptweight)):
-        if args.zptweight[i] is None: continue
-        args.zptweight[i].Draw("same")
-    f=rt.TFile("out.root","recreate")
-    for c in cs:
-        c.Write()
+        args.out.cd()
+        c.Write("check_zpt_m{}".format(ms[im]))
+
+    for iy in range(len(ys)):
+        c=rt.TCanvas()
+        gs=[]
+        for im in range(len(ms)):
+            npoints=400
+            xpoints=[i for i in range(npoints)]
+            ypoints=[GetZptWeight(args,ms[im],ys[iy],x) for x in xpoints]
+            gs+=[rt.TGraph(npoints,array("d",xpoints),array("d",ypoints))]
+            if im==0:
+                gs[-1].Draw("al")
+                gs[-1].SetTitle("zptweight at y={}".format(ys[iy]))
+                gs[-1].GetYaxis().SetRangeUser(0.5,1.5)
+            else:
+                gs[-1].SetLineColor(im+1)
+                gs[-1].Draw("same l")
+        args.out.cd()
+        c.Write("check_zpt_y{}".format(ys[iy]))
+
+def CheckResidue(args,prefix=""):
+    ## global
+    hdata=GetHist(args,0,mrange=[80,100],yrange=[0,2.4])
+    hdy=GetHist(args,1,mrange=[80,100],yrange=[0,2.4],zptweight=True)
+    hdata.Scale(1/hdata.Integral())
+    hdy.Scale(1/hdy.Integral())
+    hdata.Divide(hdy)
+    hdata.GetYaxis().SetRangeUser(0.5,1.5)
+    args.out.cd()
+    hdata.Write(prefix+"residue_g")
+
+    ## rapidity
+    yaxis=args.yaxis
+    for iy in range(1,yaxis.GetNbins()+1):
+        hdata=GetHist(args,0,mrange=[80,100],yrange=[yaxis.GetBinLowEdge(iy),yaxis.GetBinUpEdge(iy)])
+        hdy=GetHist(args,1,mrange=[80,100],yrange=[yaxis.GetBinLowEdge(iy),yaxis.GetBinUpEdge(iy)],zptweight=True)
+        hdata.Scale(1/hdata.Integral())
+        hdy.Scale(1/hdy.Integral())
+        hdata.Divide(hdy)
+        hdata.GetYaxis().SetRangeUser(0.5,1.5)
+        args.out.cd()
+        hdata.Write(prefix+"residue_y{}".format(iy))
+    
+    ## mass
+    maxis=args.maxis
+    for im in range(1,maxis.GetNbins()+1):
+        hdata=GetHist(args,0,mrange=[maxis.GetBinLowEdge(im),maxis.GetBinUpEdge(im)])
+        hdy=GetHist(args,1,mrange=[maxis.GetBinLowEdge(im),maxis.GetBinUpEdge(im)],zptweight=True)
+        hdata.Scale(1/hdata.Integral())
+        hdy.Scale(1/hdy.Integral())
+        hdata.Divide(hdy)
+        hdata.GetYaxis().SetRangeUser(0.5,1.5)
+        args.out.cd()
+        hdata.Write(prefix+"residue_m{}".format(im))
     
 
-def GetZptWeight(args,mass,rapidity,pt):
+def GetZptWeight(args,mass,rapidity,pt,step="GYM"):
     x=mass
-    y=rapidity
-    xmin=args.hbin.GetXaxis().GetBinCenter(1)
-    xmax=args.hbin.GetXaxis().GetBinCenter(args.hbin.GetXaxis().GetLast())
-    if x<xmin:
-        binx1=1
-        binx2=2
-    elif x>=xmax:
-        binx1=args.hbin.GetXaxis().GetLast()-1
-        binx2=args.hbin.GetXaxis().GetLast()
-    else:
-        binx=args.hbin.GetXaxis().FindBin(x)
-        if x>=args.hbin.GetXaxis().GetBinCenter(binx):
-            binx1=binx
-            binx2=binx+1
-        else:
-            binx1=binx-1
-            binx2=binx
-    x1=args.hbin.GetXaxis().GetBinCenter(binx1)
-    x2=args.hbin.GetXaxis().GetBinCenter(binx2)
+    y=abs(rapidity)
+    sf=1.
+    step=step.upper()
 
-    ymin=args.hbin.GetYaxis().GetBinCenter(1)
-    ymax=args.hbin.GetYaxis().GetBinCenter(args.hbin.GetYaxis().GetLast())
-    if y<ymin:
-        biny1=1
-        biny2=2
-    elif y>=ymax:
-        biny1=args.hbin.GetYaxis().GetLast()-1
-        biny2=args.hbin.GetYaxis().GetLast()
-    else:
-        biny=args.hbin.GetYaxis().FindBin(y)
-        if y>=args.hbin.GetYaxis().GetBinCenter(biny):
-            biny1=biny
-            biny2=biny+1
+    ## step 1 (G) global correction
+    if "G" in step:
+        sf*=args.zptweight_g.Eval(pt)
+
+    ## step 2 (Y) rapidity-depenent correction
+    if "Y" in step:
+        ymin=args.yaxis.GetBinCenter(1)
+        ymax=args.yaxis.GetBinCenter(args.yaxis.GetNbins())
+        if y<ymin:
+            biny1=1
+            biny2=2
+        elif y>=ymax:
+            biny1=args.yaxis.GetNbins()-1
+            biny2=args.yaxis.GetNbins()
         else:
-            biny1=biny-1
-            biny2=biny
-    y1=args.hbin.GetYaxis().GetBinCenter(biny1)
-    y2=args.hbin.GetYaxis().GetBinCenter(biny2)
+            biny=args.yaxis.FindBin(y)
+            if y>=args.yaxis.GetBinCenter(biny):
+                biny1=biny
+                biny2=biny+1
+            else:
+                biny1=biny-1
+                biny2=biny
+        y1=args.yaxis.GetBinCenter(biny1)
+        y2=args.yaxis.GetBinCenter(biny2)
+        sf*=( (y2-y)*args.zptweight_y[biny1].Eval(pt) + (y-y1)*args.zptweight_y[biny2].Eval(pt) )/(y2-y1)
     
-    z11=args.zptweight[args.hbin.GetBin(binx1,biny1)].Eval(pt)
-    z12=args.zptweight[args.hbin.GetBin(binx1,biny2)].Eval(pt)
-    z21=args.zptweight[args.hbin.GetBin(binx2,biny1)].Eval(pt)
-    z22=args.zptweight[args.hbin.GetBin(binx2,biny2)].Eval(pt)
-    return ((x2-x)*(y2-y)*z11+(x2-x)*(y-y1)*z12+(x-x1)*(y2-y)*z12+(x-x1)*(y-y1)*z22)/(x2-x1)/(y2-y1)
+    ## step 3 mass-depenent correction
+    if "M" in step:
+        xmin=args.maxis.GetBinCenter(1)
+        xmax=args.maxis.GetBinCenter(args.maxis.GetNbins())
+        if x<xmin:
+            binx1=1
+            binx2=2
+        elif x>=xmax:
+            binx1=args.maxis.GetNbins()-1
+            binx2=args.maxis.GetNbins()
+        else:
+            binx=args.maxis.FindBin(x)
+            if x>=args.maxis.GetBinCenter(binx):
+                binx1=binx
+                binx2=binx+1
+            else:
+                binx1=binx-1
+                binx2=binx
+        x1=args.maxis.GetBinCenter(binx1)
+        x2=args.maxis.GetBinCenter(binx2)
+        sf*=( (x2-x)*args.zptweight_m[binx1].Eval(pt) + (x-x1)*args.zptweight_m[binx2].Eval(pt) )/(x2-x1)
+    return sf
 
 def EvalZptWeight(args):
-    npar=6
     mbins=args.hbin.GetXaxis().GetXbins()
     ybins=args.hbin.GetYaxis().GetXbins()
     for im in range(len(mbins)-1):
@@ -219,6 +334,112 @@ def EvalZptWeight(args):
     
     args.mPlotter.pdir.Delete()
     args.ePlotter.pdir.Delete()
+
+def EvalZptWeightG(args,iteration=1):
+    for it in range(iteration):
+        print "[EvalZptWeightG] iter {}".format(it)
+        hdata=GetHist(args,0,mrange=[80,100],yrange=[0,2.4])
+        hdy=GetHist(args,1,mrange=[80,100],yrange=[0,2.4],zptweight=True)
+        hdata.Scale(1/hdata.Integral())
+        hdy.Scale(1/hdy.Integral())
+        hdata.Divide(hdy)
+        hdata.GetYaxis().SetRangeUser(0.5,1.5)
+        args.out.cd()
+        hdata.Write("gresidue_iter{}".format(it))
+        for i in range(hdata.GetNcells()):
+            sf=GetZptWeight(args,91,0,hdata.GetBinCenter(i))
+            hdata.SetBinContent(i,sf*hdata.GetBinContent(i))
+            hdata.SetBinError(i,sf*hdata.GetBinError(i))
+        c=rt.TCanvas()
+        hdata.SetTitle("gfit_iter{}".format(it))
+        hdata.Fit(args.zptweight_g)
+        hdata.Draw()
+        args.out.cd()
+        c.Write("gfit_iter{}".format(it))
+        args.mPlotter.pdir.Delete()
+        args.ePlotter.pdir.Delete()
+    
+    hdy_nozptweight=GetHist(args,1,zptweight=False,gen=True)
+    hdy=GetHist(args,1,zptweight=True,gen=True)
+    normsf=hdy_nozptweight.Integral()/hdy.Integral()
+    print "[EvalZptWeightG] norm sf={}".format(normsf)
+    Scale(args.zptweight_g,normsf)
+    hdata=GetHist(args,0,mrange=[80,100],yrange=[0,2.4])
+    hdy=GetHist(args,1,mrange=[80,100],yrange=[0,2.4],zptweight=True)
+    hdata.Scale(1/hdata.Integral())
+    hdy.Scale(1/hdy.Integral())
+    hdata.Divide(hdy)
+    hdata.GetYaxis().SetRangeUser(0.5,1.5)
+    args.out.cd()
+    hdata.Write("gresidue_norm")
+
+def EvalZptWeightY(args,iteration=1):
+    yaxis=args.yaxis
+    for it in range(iteration):
+        for iy in range(1,yaxis.GetNbins()+1):
+            print "[EvalZptWeightY] iter {} y {}".format(it,iy)
+            hdata=GetHist(args,0,mrange=[80,100],yrange=[yaxis.GetBinLowEdge(iy),yaxis.GetBinUpEdge(iy)])
+            hdy=GetHist(args,1,mrange=[80,100],yrange=[yaxis.GetBinLowEdge(iy),yaxis.GetBinUpEdge(iy)],zptweight=True)
+            hdata.Scale(1/hdata.Integral())
+            hdy.Scale(1/hdy.Integral())
+            hdata.Divide(hdy)
+            hdata.GetYaxis().SetRangeUser(0.5,1.5)
+            args.out.cd()
+            hdata.Write("yresidue_iter{}_y{}".format(it,iy))
+            for i in range(hdata.GetNcells()):
+                sf=GetZptWeight(args,91,yaxis.GetBinCenter(iy),hdata.GetBinCenter(i),step="Y")
+                hdata.SetBinContent(i,sf*hdata.GetBinContent(i))
+                hdata.SetBinError(i,sf*hdata.GetBinError(i))
+            c=rt.TCanvas()
+            hdata.SetTitle("yfit_iter{}_y{}".format(it,iy))
+            hdata.Fit(args.zptweight_y[iy])
+            hdata.Draw()
+            args.out.cd()
+            c.Write("yfit_iter{}_y{}".format(it,iy))
+            args.mPlotter.pdir.Delete()
+            args.ePlotter.pdir.Delete()
+        
+    for iy in range(1,yaxis.GetNbins()+1):
+        hdy_nozptweight=GetHist(args,1,yrange=[yaxis.GetBinLowEdge(iy),yaxis.GetBinUpEdge(iy)],zptweight=False,gen=True)
+        hdy=GetHist(args,1,yrange=[yaxis.GetBinLowEdge(iy),yaxis.GetBinUpEdge(iy)],zptweight=True,gen=True)
+        normsf=hdy_nozptweight.Integral()/hdy.Integral()
+        print "[EvalZptWeightY] ybin {} norm sf={}".format(iy,normsf)
+        Scale(args.zptweight_y[iy],normsf)
+
+def EvalZptWeightM(args,iteration=1):
+    maxis=args.maxis
+    for it in range(iteration):
+        for im in range(1,maxis.GetNbins()+1):
+            print "[EvalZptWeightM] iter {} m {}".format(it,im)
+            hdata=GetHist(args,0,mrange=[maxis.GetBinLowEdge(im),maxis.GetBinUpEdge(im)],yrange=[0,2.4])
+            hdy=GetHist(args,1,mrange=[maxis.GetBinLowEdge(im),maxis.GetBinUpEdge(im)],yrange=[0,2.4],zptweight=True)
+            hdata.Scale(1/hdata.Integral())
+            hdy.Scale(1/hdy.Integral())
+            hdata.Divide(hdy)
+            hdata.GetYaxis().SetRangeUser(0.5,1.5)
+            args.out.cd()
+            hdata.Write("mresidue_iter{}_m{}".format(it,im))
+            for i in range(hdata.GetNcells()):
+                sf=GetZptWeight(args,maxis.GetBinCenter(im),0,hdata.GetBinCenter(i),step="M")
+                hdata.SetBinContent(i,sf*hdata.GetBinContent(i))
+                hdata.SetBinError(i,sf*hdata.GetBinError(i))
+            c=rt.TCanvas()
+            hdata.SetTitle("mfit_iter{}_m{}".format(it,im))
+            args.zptweight_m[im].FixParameter(0,1)
+            args.zptweight_m[im].FixParameter(args.npar_m-1,0)
+            hdata.Fit(args.zptweight_m[im])
+            hdata.Draw()
+            args.out.cd()
+            c.Write("mfit_iter{}_m{}".format(it,im))
+            args.mPlotter.pdir.Delete()
+            args.ePlotter.pdir.Delete()
+        
+    for im in range(1,maxis.GetNbins()+1):
+        hdy_nozptweight=GetHist(args,1,mrange=[maxis.GetBinLowEdge(im),maxis.GetBinUpEdge(im)],zptweight=False,gen=True)
+        hdy=GetHist(args,1,mrange=[maxis.GetBinLowEdge(im),maxis.GetBinUpEdge(im)],zptweight=True,gen=True)
+        normsf=hdy_nozptweight.Integral()/hdy.Integral()
+        print "[EvalZptWeightM] mbin {} norm sf={}".format(im,normsf)
+        Scale(args.zptweight_m[im],normsf)
     
 def GetMinWidth(hist):
     minwidth=1e6
@@ -282,12 +503,24 @@ def SimpleConvolution(hist1,hist2,width=None):
             out.SetBinError(ibin,sqrt(out.GetBinError(ibin)**2+err2))
     return out
 
+def SaveZptWeight(args):
+    args.out.cd()
+    args.yaxis.Write()
+    args.maxis.Write()
+    args.zptweight_g.Write()
+    for f in args.zptweight_y:
+        if f: f.Write()
+    for f in args.zptweight_m:
+        if f: f.Write()
+
 def test(args):
     SetupZptWeight(args)
-    for i in range(10):
-        print "iter",i
-        EvalZptWeight(args)
+    EvalZptWeightG(args,iteration=5)
+    EvalZptWeightY(args,iteration=5)
+    EvalZptWeightM(args,iteration=5)
+    CheckResidue(args,prefix="after_")
     CheckZptWeight(args)
+    SaveZptWeight(args)
     
 def run(args):
     cmd=""
@@ -295,33 +528,36 @@ def run(args):
     cmdtemp="SKFlat.py -a ZptWeight -i {} -n {} -e {} --nmax 150 "
     runlist=[]
     for era in args.era:
-        runlist+=[["WW_pythia"+skim,10,era]]
-        runlist+=[["WZ_pythia"+skim,10,era]]
-        runlist+=[["ZZ_pythia"+skim,10,era]]
-        runlist+=[["WJets_MG"+skim,10,era]]
-        runlist+=[["TTLL_powheg"+skim,30,era]]
-        runlist+=[["SingleTop_tW_top_NoFullyHad"+skim,10,era]]
-        runlist+=[["SingleTop_tW_antitop_NoFullyHad"+skim,10,era]]
-        if args.dy=="MiNNLO":
-            if "e" in ",".join(args.channel):
-                runlist+=[["DYJetsToEE_MiNNLO",50,era]]
-            if "m" in ",".join(args.channel):
-                runlist+=[["DYJetsToMuMu_MiNNLO",50,era]]
-            runlist+=[["DYJetsToTauTau_MiNNLO"+skim,10,era]]
-        else:
-            runlist+=[[args.dy,50,era]]
-        if "e" in ",".join(args.channel):
-            if era=="2018":
-                runlist+=[["EGamma"+skim,20,era]]
+        if "bg" in args.run:
+            runlist+=[["WW_pythia"+skim,10,era]]
+            runlist+=[["WZ_pythia"+skim,10,era]]
+            runlist+=[["ZZ_pythia"+skim,10,era]]
+            runlist+=[["WJets_MG"+skim,10,era]]
+            runlist+=[["TTLL_powheg"+skim,30,era]]
+            runlist+=[["SingleTop_tW_top_NoFullyHad"+skim,10,era]]
+            runlist+=[["SingleTop_tW_antitop_NoFullyHad"+skim,10,era]]
+        if "dy" in args.run:
+            if args.dy=="MiNNLO":
+                if "e" in ",".join(args.channel):
+                    runlist+=[["DYJetsToEE_MiNNLO",50,era]]
+                if "m" in ",".join(args.channel):
+                    runlist+=[["DYJetsToMuMu_MiNNLO",50,era]]
+                runlist+=[["DYJetsToTauTau_MiNNLO"+skim,10,era]]
             else:
-                if "ee" in args.channel:
-                    runlist+=[["DoubleEG"+skim,20,era]]
-                if "el" in args.channel:
-                    runlist+=[["SingleElectron"+skim,20,era]]
-        if "mm" in args.channel:
-            runlist+=[["DoubleMuon"+skim,20,era]]
-        if "mu" in args.channel:
-            runlist+=[["SingleMuon"+skim,20,era]]
+                runlist+=[[args.dy,50,era]]
+        if "data" in args.run:
+            if "e" in ",".join(args.channel):
+                if era=="2018":
+                    runlist+=[["EGamma"+skim,20,era]]
+                else:
+                    if "ee" in args.channel:
+                        runlist+=[["DoubleEG"+skim,20,era]]
+                    if "el" in args.channel:
+                        runlist+=[["SingleElectron"+skim,20,era]]
+            if "mm" in args.channel:
+                runlist+=[["DoubleMuon"+skim,20,era]]
+            if "mu" in args.channel:
+                runlist+=[["SingleMuon"+skim,20,era]]
             
     for a in runlist:
         cmd+=cmdtemp.format(a[0],a[1],a[2])+" & sleep 10;\n"
@@ -331,14 +567,15 @@ def run(args):
     os.system(cmd)
 
 if __name__=="__main__":
-    
-
     import argparse
     parser=argparse.ArgumentParser()
     parser.add_argument("action",help="run, test")
     parser.add_argument("--dy",default="DYJets",help="DYJets, DYJets_MG, MiNNLO")
     parser.add_argument("--era",default="all",help="eras separated by commas. Available: 2016preVFP(2016a), 2016postVFP(2016b), 2017, 2018")
     parser.add_argument("--channel",default="mm,ee",help="channels separated by commas. Available: ee, el, mm, mu")
+    parser.add_argument("--run",default="data,dy,bg",help="run list separated by commas. Available: data, dy,bg")
+    parser.add_argument("--in",dest="input",default=None,help="input file path")
+    parser.add_argument("--out",default="zptout.root",help="out file path")
     parser.add_argument("--dry",default=False,action="store_true")
                        
     args=parser.parse_args()
@@ -349,7 +586,14 @@ if __name__=="__main__":
         if args.dy=="MiNNLO": args.era="2016preVFP,2016postVFP"
     args.era=args.era.replace("2016a","2016preVFP").replace("2016b","2016postVFP").split(",")
     args.channel=args.channel.split(",")
+    args.run=args.run.split(",")
 
+    if args.out==args.input:
+        print "cannot use out==in"
+        exit(1)
+    args.out=rt.TFile(args.out,"recreate")
+
+    rt.Verbosity=1
     if args.dy=="DYJets":
         args.mPlotter=rt.AFBPlotter("data-tau_amc-vv-wjets-tttw-1.7*ss_amc amc","ZptWeight")
         args.ePlotter=rt.AFBPlotter("data-tau_amc-vv-wjets-tttw-ss_amc amc","ZptWeight")
@@ -359,7 +603,6 @@ if __name__=="__main__":
     elif args.dy=="MiNNLO":
         args.mPlotter=rt.AFBPlotter("data-tau_mi-vv-wjets-tttw-1.7*ss_mi mi","ZptWeight")
         args.ePlotter=rt.AFBPlotter("data-tau_mi-vv-wjets-tttw-ss_mi mi","ZptWeight")
-    rt.Verbosity=0
 
     if args.action in ["run"]:
         run(args)

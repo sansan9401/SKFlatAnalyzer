@@ -38,6 +38,8 @@ void ZptWeight::FillHists(Parameter& p){
 
   map<TString,double> weightmap;
   weightmap[""]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF;
+  weightmap["_zptg"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*GetZptWeight(genZ.M(),genZ.Rapidity(),genZ.Pt(),"G")*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF;
+  weightmap["_zptgy"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*GetZptWeight(genZ.M(),genZ.Rapidity(),genZ.Pt(),"GY")*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF;
   weightmap["_nozptweight"]=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.z0weight*p.w.electronRECOSF*p.w.electronIDSF*p.w.muonIDSF*p.w.muonISOSF*p.w.triggerSF;
 
   for(const auto& [wname,w]:weightmap){
