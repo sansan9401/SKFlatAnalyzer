@@ -2,9 +2,6 @@
 
 SMPAnalyzerCore::SMPAnalyzerCore(){}
 SMPAnalyzerCore::~SMPAnalyzerCore(){
-  for(auto& iter:map_hist_zpt){
-    if(iter.second) delete iter.second;
-  }
   if(roc) delete roc;
   if(rocele) delete rocele;
   if(hz0_data) delete hz0_data;
@@ -14,6 +11,7 @@ SMPAnalyzerCore::~SMPAnalyzerCore(){
   }
   maphist_TH4D.clear();
   DeleteEfficiency();
+  DeleteZptWeight();
   DeleteCFRate();
 }
 
@@ -21,12 +19,12 @@ void SMPAnalyzerCore::initializeAnalyzer(){
   if(MaxEvent>0) reductionweight=1.*fChain->GetEntries()/MaxEvent;
   else reductionweight=1.;
   SetupEfficiency();
-  SetupZptWeight();
   SetupRoccoR();
   SetupZ0Weight();
   SetupCFRate();
   IsDYSample=false;
   if(MCSample.Contains("DYJets")||MCSample.Contains("ZToEE")||MCSample.Contains("ZToMuMu")||MCSample.Contains(TRegexp("DY[0-9]Jets"))) IsDYSample=true;
+  if(IsDYSample) SetupZptWeight();
 }
 void SMPAnalyzerCore::beginEvent(){
   _event=GetEvent();
@@ -263,10 +261,10 @@ void SMPAnalyzerCore::FillHist(TString histname,
 void SMPAnalyzerCore::FillHist(TString histname,
                             Double_t value_x, Double_t value_y, Double_t value_z, Double_t value_u,
                             Double_t weight,
-                            Int_t n_binx, Double_t *xbins,
-                            Int_t n_biny, Double_t *ybins,
-                            Int_t n_binz, Double_t *zbins,
-                            Int_t n_binu, Double_t *ubins){
+                            Int_t n_binx, const Double_t *xbins,
+                            Int_t n_biny, const Double_t *ybins,
+                            Int_t n_binz, const Double_t *zbins,
+                            Int_t n_binu, const Double_t *ubins){
 
   TH4D *this_hist = GetHist4D(histname);
   if( !this_hist ){
@@ -282,9 +280,9 @@ void SMPAnalyzerCore::FillHist(TString histname,
 void SMPAnalyzerCore::FillHist(TString histname,
                             Double_t value_x, Double_t value_y, Double_t value_z, Double_t value_u,
                             Double_t weight,
-                            Int_t n_binx, Double_t *xbins,
-                            Int_t n_biny, Double_t *ybins,
-                            Int_t n_binz, Double_t *zbins,
+                            Int_t n_binx, const Double_t *xbins,
+                            Int_t n_biny, const Double_t *ybins,
+                            Int_t n_binz, const Double_t *zbins,
 			    Int_t n_binu, Double_t u_min, Double_t u_max){
 
   TH4D *this_hist = GetHist4D(histname);
@@ -478,33 +476,143 @@ double SMPAnalyzerCore::GetDileptonTriggerSF(TString triggerSF_key0,TString trig
   if(sim_eff==0) return 1.;
   else return data_eff/sim_eff;
 }
+
+// ZptWeight
 void SMPAnalyzerCore::SetupZptWeight(){
-  /// TODO: currently, temp Zpt weight from 2017 double muon for all other channels
-  cout<<"[SMPAnalyzerCore::SetupZptWeight] setting zptcor"<<endl;
-  TString datapath=getenv("DATA_DIR");
-  if(!IsExists(datapath+"/"+GetEra()+"/SMP/ZptWeight.root")){
-    cout<<"[SMPAnalyzerCore::SetupZptWeight] no ZptWeight.root"<<endl;
+  TString _MCSample=MCSample;
+  if(MCSample.Contains("MiNNLO")) _MCSample="MiNNLO";
+  TString zptpath=(TString)getenv("DATA_DIR")+"/"+GetEra()+"/SMP/ZptWeight_"+_MCSample+".root";
+  if(IsExists(zptpath)){
+    cout<<"[SMPAnalyzerCore::SetupZptWeight] using file "+zptpath<<endl;
+  }else{
+    cout<<"[SMPAnalyzerCore::SetupZptWeight] no "+zptpath<<endl;
     return;
   }
-  TFile fzpt(datapath+"/"+GetEra()+"/SMP/ZptWeight.root");
-  for(const auto&& key:*(fzpt.GetListOfKeys())){
-    TH2D* this_hist=(TH2D*)((TKey*)key)->ReadObj();
-    TString histname=this_hist->GetName();
-    TString striphistname=histname;
-    int extent=0,start=striphistname.Index(TRegexp("_iter[0-9]*$"),&extent);
-    if(start>=0) striphistname.Replace(start,extent,"");
-    cout<<"[SMPAnalyzerCore::SetupZptWeight] setting "<<histname<<endl;
-    if(histname.Contains(TRegexp("_iter0$"))){
-      map_hist_zpt[striphistname]=this_hist;
-      this_hist->SetDirectory(0);
-    }else if(histname.Contains(TRegexp("_iter[0-9]*$"))){
-      map_hist_zpt[striphistname]->Multiply(this_hist);
-    }else if(histname.Contains(TRegexp("_norm$"))){
-      map_hist_zpt[histname]=this_hist;
-      this_hist->SetDirectory(0);
+  DeleteZptWeight();
+  TFile f(zptpath);
+  fZptWeightG=(TF1*)f.Get("zptweight_g");
+  if(!fZptWeightG){
+    cout<<"[SMPAnalyzerCore::SetupZptWeight] no zptweight_g"<<endl;
+    exit(ENODATA);
+  }
+  fZptWeightYaxis=(TAxis*)f.Get("yaxis");
+  if(!fZptWeightYaxis){
+    cout<<"[SMPAnalyzerCore::SetupZptWeight] no yaxis"<<endl;
+    exit(ENODATA);
+  }
+  fZptWeightY.resize(fZptWeightYaxis->GetNbins()+2,NULL);
+  for(int i=1;i<fZptWeightYaxis->GetNbins()+1;i++){
+    fZptWeightY[i]=(TF1*)f.Get(Form("zptweight_y%d",i));
+    if(!fZptWeightY[i]){
+      cout<<"[SMPAnalyzerCore::SetupZptWeight] no zptweight_y"+TString(i)<<endl;
+      exit(ENODATA);
+    }
+  }
+  fZptWeightMaxis=(TAxis*)f.Get("maxis");
+  if(!fZptWeightMaxis){
+    cout<<"[SMPAnalyzerCore::SetupZptWeight] no maxis"<<endl;
+    exit(ENODATA);
+  }
+  fZptWeightM.resize(fZptWeightMaxis->GetNbins()+2,NULL);
+  for(int i=1;i<fZptWeightMaxis->GetNbins()+1;i++){
+    fZptWeightM[i]=(TF1*)f.Get(Form("zptweight_m%d",i));
+    if(!fZptWeightM[i]){
+      cout<<"[SMPAnalyzerCore::SetupZptWeight] no zptweight_m"+TString(i)<<endl;
+      exit(ENODATA);
     }
   }
 }
+double SMPAnalyzerCore::GetZptWeight(double mass,double rapidity,double pt,TString opt){
+  if(!fZptWeightG) return 1.;
+  if(mass==0) return 1.;
+  if(isnan(rapidity)) return 1.;
+  double m=mass;
+  if(m<fZptWeightMaxis->GetXmin()) m=fZptWeightMaxis->GetXmin();
+  if(m>=fZptWeightMaxis->GetXmax()) m=fZptWeightMaxis->GetXmax()-1e-6;
+  double y=fabs(rapidity);
+  if(y>=fZptWeightYaxis->GetXmax()) y=fZptWeightYaxis->GetXmax()-1e-6;
+  if(pt<0) pt=0;
+  if(pt>=650) pt=649.9;
+  double sf=1.;
+
+  opt.ToUpper();
+  if(opt.Contains("G")) sf*=fZptWeightG->Eval(pt);
+
+  if(opt.Contains("Y")){
+    double ymin=fZptWeightYaxis->GetBinCenter(1);
+    double ymax=fZptWeightYaxis->GetBinCenter(fZptWeightYaxis->GetNbins());
+    int biny1,biny2;
+    if(y<ymin){
+      biny1=1;
+      biny2=2;
+    }else if(y>=ymax){
+      biny1=fZptWeightYaxis->GetNbins()-1;
+      biny2=fZptWeightYaxis->GetNbins();
+    }else{
+      int biny=fZptWeightYaxis->FindBin(y);
+      if(y>=fZptWeightYaxis->GetBinCenter(biny)){
+	biny1=biny;
+	biny2=biny+1;
+      }else{
+	biny1=biny-1;
+	biny2=biny;
+      }
+    }
+    double y1=fZptWeightYaxis->GetBinCenter(biny1);
+    double y2=fZptWeightYaxis->GetBinCenter(biny2);
+    sf*=( (y2-y)*fZptWeightY[biny1]->Eval(pt) + (y-y1)*fZptWeightY[biny2]->Eval(pt) )/(y2-y1);
+  }
+
+  if(opt.Contains("M")){
+    double mmin=fZptWeightMaxis->GetBinCenter(1);
+    double mmax=fZptWeightMaxis->GetBinCenter(fZptWeightMaxis->GetNbins());
+    int binm1,binm2;
+    if(m<mmin){
+      binm1=1;
+      binm2=2;
+    }else if(m>=mmax){
+      binm1=fZptWeightMaxis->GetNbins()-1;
+      binm2=fZptWeightMaxis->GetNbins();
+    }else{
+      int binm=fZptWeightMaxis->FindBin(m);
+      if(m>=fZptWeightMaxis->GetBinCenter(binm)){
+	binm1=binm;
+	binm2=binm+1;
+      }else{
+	binm1=binm-1;
+	binm2=binm;
+      }
+    }
+    double m1=fZptWeightMaxis->GetBinCenter(binm1);
+    double m2=fZptWeightMaxis->GetBinCenter(binm2);
+    sf*=( (m2-m)*fZptWeightM[binm1]->Eval(pt) + (m-m1)*fZptWeightM[binm2]->Eval(pt) )/(m2-m1);
+  }
+  return sf;
+}
+void SMPAnalyzerCore::DeleteZptWeight(){
+  if(fZptWeightG){
+    delete fZptWeightG;
+    fZptWeightG=NULL;
+  }
+  if(fZptWeightYaxis){
+    delete fZptWeightYaxis;
+    fZptWeightYaxis=NULL;
+  }
+  for(auto f:fZptWeightY){
+    if(f) delete f;
+  }
+  fZptWeightY.clear();  
+  if(fZptWeightMaxis){
+    delete fZptWeightMaxis;
+    fZptWeightMaxis=NULL;
+  }
+  for(auto f:fZptWeightM){
+    if(f) delete f;
+  }
+  fZptWeightM.clear();
+}
+
+
 void SMPAnalyzerCore::SetupRoccoR(){
   cout<<"[SMPAnalyzerCore::SetupRoccoR] setting Rocheseter Correction"<<endl;
   TString datapath=getenv("DATA_DIR");
@@ -535,28 +643,6 @@ double SMPAnalyzerCore::GetZ0Weight(double valx){
   double mc_val = hz0_mc->Eval(valx);
   double norm = hz0_mc->Integral(-100,100)/hz0_data->Integral(-100,100);
   return norm*data_val/mc_val;
-}
-double SMPAnalyzerCore::GetZptWeight(double zpt,double zrap,Lepton::Flavour flavour){
-  double valzptcor=1.;
-  double valzptcor_norm=1.;
-  zrap=fabs(zrap);
-  TString sflavour=flavour==Lepton::MUON?"muon":"electron";
-  TString MCName=MCSample;
-  if(MCName.Contains(TRegexp("^DY[0-9]Jets$"))) MCName="DYJets";
-  if(MCName=="DYJets_Summer20") MCName="DYJets";
-  if(MCName.Contains(TRegexp("^DYJets_Pt-[0-9]*To[0-9Inf]*$"))) MCName="DYJets";
-  if(MCName.Contains(TRegexp("^DYJets_M-[0-9]*to[0-9Inf]*$"))) MCName="DYJets";
-  TString hzptname=MCName+"_"+sflavour;
-  TString hnormname=hzptname+"_norm";
-  auto it=map_hist_zpt.find(hzptname);
-  if(it!=map_hist_zpt.end()){
-    valzptcor*=GetBinContentUser(map_hist_zpt[hzptname],zpt,zrap,0);
-  }
-  it=map_hist_zpt.find(hnormname);
-  if(it!=map_hist_zpt.end()){
-    valzptcor_norm*=GetBinContentUser(map_hist_zpt[hnormname],zpt,zrap,0);
-  }
-  return valzptcor*valzptcor_norm;
 }
 void SMPAnalyzerCore::SetupCFRate(){
   cout<<"[SMPAnalyzerCore::SetupCFRate] setting CFRate"<<endl;
@@ -1086,7 +1172,7 @@ SMPAnalyzerCore::Parameter SMPAnalyzerCore::MakeParameter(TString channel,TStrin
     if(IsDYSample){
       if(abs(lhe_l0.ID())==11||abs(lhe_l0.ID())==13){
 	TLorentzVector genZ=(gen_l0+gen_l1);
-	p.w.zptweight=GetZptWeight(genZ.Pt(),genZ.Rapidity(),abs(lhe_l0.ID())==13?Lepton::Flavour::MUON:Lepton::Flavour::ELECTRON);
+	p.w.zptweight=GetZptWeight(genZ.M(),genZ.Rapidity(),genZ.Pt());
       }else p.hprefix+="tau_";
     }
   }

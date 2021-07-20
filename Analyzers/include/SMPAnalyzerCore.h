@@ -106,16 +106,16 @@ public:
   void FillHist(TString histname,
                 Double_t value_x, Double_t value_y, Double_t value_z, Double_t value_u,
                 Double_t weight,
-                Int_t n_binx, Double_t *xbins,
-                Int_t n_biny, Double_t *ybins,
-                Int_t n_binz, Double_t *zbins,
-                Int_t n_binu, Double_t *ubins);
+                Int_t n_binx, const Double_t *xbins,
+                Int_t n_biny, const Double_t *ybins,
+                Int_t n_binz, const Double_t *zbins,
+                Int_t n_binu, const Double_t *ubins);
   void FillHist(TString histname,
                 Double_t value_x, Double_t value_y, Double_t value_z, Double_t value_u,
                 Double_t weight,
-                Int_t n_binx, Double_t *xbins,
-                Int_t n_biny, Double_t *ybins,
-                Int_t n_binz, Double_t *zbins,
+                Int_t n_binx, const Double_t *xbins,
+                Int_t n_biny, const Double_t *ybins,
+                Int_t n_binz, const Double_t *zbins,
                 Int_t n_binu, Double_t u_min, Double_t u_max);
   virtual void WriteHist();
 
@@ -172,10 +172,9 @@ public:
   static double GetPtThreshold(TString path);
   static bool IsExists(TString filepath);
   static vector<TString> Split(TString s,TString del);
-  void SetupZptWeight();
+
   void SetupZ0Weight();
   void SetupRoccoR();
-  double GetZptWeight(double zpt,double zrap,Lepton::Flavour flavour);
   double GetZ0Weight(double z0);
 
   void SetupCFRate();
@@ -208,12 +207,17 @@ public:
     return a;
   }
   
-  static const int zptcor_nptbin=46;
-  const double zptcor_ptbin[zptcor_nptbin+1]={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,32,34,36,38,40,44,48,52,56,60,70,80,90,100,120,140,160,180,200,250,400};
-  static const int zptcor_nybin=6;
-  const double zptcor_ybin[zptcor_nybin+1]={0,0.4,0.8,1.2,1.6,2.0,2.4};
 
-  map<TString,TH2D*> map_hist_zpt;
+  // ZptWeight
+  void SetupZptWeight();
+  double GetZptWeight(double mass,double rapidity,double pt,TString opt="GYM");
+  void DeleteZptWeight();
+  TF1* fZptWeightG=NULL;
+  vector<TF1*> fZptWeightY;
+  TAxis* fZptWeightYaxis=NULL;
+  vector<TF1*> fZptWeightM;
+  TAxis* fZptWeightMaxis=NULL;
+
   TF1 *hz0_data=NULL, *hz0_mc=NULL;
   bool IsDYSample=false;
   Event _event;

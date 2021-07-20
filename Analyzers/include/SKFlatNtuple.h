@@ -76,7 +76,7 @@ public :
 
    }
 
-   TChain *fChain;
+   TChain *fChain=NULL;
 
    // Declaration of leaf types
    Bool_t          IsData;

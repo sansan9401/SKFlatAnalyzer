@@ -1895,9 +1895,9 @@ void AnalyzerCore::FillHist(TString histname,
 void AnalyzerCore::FillHist(TString histname,
           double value_x, double value_y, double value_z,
           double weight,
-          int n_binx, double *xbins,
-          int n_biny, double *ybins,
-          int n_binz, double *zbins){
+          int n_binx, const double *xbins,
+          int n_biny, const double *ybins,
+          int n_binz, const double *zbins){
   
   TH3D *this_hist = GetHist3D(histname);
   if( !this_hist ){
