@@ -21,8 +21,8 @@ public:
 
   TTree* newtree;
   float weight;
-  float PUweight;
-  float prefireweight;
+  float PUweight,PUweight_up,PUweight_down;
+  float prefireweight,prefireweight_up,prefireweight_down;
   float zptweight;
   float z0weight;
   float totWeight;

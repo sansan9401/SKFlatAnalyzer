@@ -635,8 +635,8 @@ void SKFlatNtuple::Init()
   fChain->SetBranchAddress("electron_dr03TkSumPt", &electron_dr03TkSumPt, &b_electron_dr03TkSumPt);
   fChain->SetBranchAddress("electron_ecalPFClusterIso", &electron_ecalPFClusterIso, &b_electron_ecalPFClusterIso);
   fChain->SetBranchAddress("electron_hcalPFClusterIso", &electron_hcalPFClusterIso, &b_electron_hcalPFClusterIso);
-  fChain->SetBranchAddress("electron_pathbits", &electron_pathbits, &b_electron_pathbits);
-  fChain->SetBranchAddress("electron_filterbits", &electron_filterbits, &b_electron_filterbits);
+  fChain->SetBranchAddress("electron_pathbits_R01", &electron_pathbits, &b_electron_pathbits);
+  fChain->SetBranchAddress("electron_filterbits_R01", &electron_filterbits, &b_electron_filterbits);
   fChain->SetBranchAddress("muon_PfChargedHadronIsoR04", &muon_PfChargedHadronIsoR04, &b_muon_PfChargedHadronIsoR04);
   fChain->SetBranchAddress("muon_PfNeutralHadronIsoR04", &muon_PfNeutralHadronIsoR04, &b_muon_PfNeutralHadronIsoR04);
   fChain->SetBranchAddress("muon_PfGammaIsoR04", &muon_PfGammaIsoR04, &b_muon_PfGammaIsoR04);

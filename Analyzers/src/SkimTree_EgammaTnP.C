@@ -16,7 +16,11 @@ void SkimTree_EgammaTnP::initializeAnalyzer(){
   if(!IsDATA){
     newtree->Branch("weight",&weight);
     newtree->Branch("PUweight",&PUweight);
+    newtree->Branch("PUweight_up",&PUweight_up);
+    newtree->Branch("PUweight_down",&PUweight_down);
     newtree->Branch("prefireweight",&prefireweight);
+    newtree->Branch("prefireweight_up",&prefireweight_up);
+    newtree->Branch("prefireweight_down",&prefireweight_down);
     newtree->Branch("zptweight",&zptweight);
     newtree->Branch("z0weight",&z0weight);
     newtree->Branch("totWeight",&totWeight);
@@ -124,7 +128,11 @@ void SkimTree_EgammaTnP::FillHists(Parameter& p){
 
     weight=p.w.lumiweight;
     PUweight=p.w.PUweight;
+    PUweight_up=p.w.PUweight_up;
+    PUweight_down=p.w.PUweight_down;
     prefireweight=p.w.prefireweight;
+    prefireweight_up=p.w.prefireweight_up;
+    prefireweight_down=p.w.prefireweight_down;
     zptweight=p.w.zptweight;
     z0weight=p.w.z0weight;
     totWeight=p.w.lumiweight*p.w.PUweight*p.w.prefireweight*p.w.zptweight*p.w.z0weight;
