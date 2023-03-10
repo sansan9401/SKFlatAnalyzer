@@ -20,13 +20,8 @@ void FakeAnalyzer::executeLeptonEvent(){
      || (DataStream.Contains("SingleElectron")&&DataYear==2017)
      || (DataStream.Contains("EGamma")&&DataYear==2018) ){
 
-    {Parameter p=MakeParameter("ej");
-    UseSelectiveCharge(p);
-    executeEventWithParameter(p);}
-    
-    {Parameter p=MakeParameter("Ej");
-    UseSelectiveCharge(p);
-    executeEventWithParameter(p);}
+    executeEventWithParameter(MakeParameter("ej"));    
+    executeEventWithParameter(MakeParameter("Ej"));
   }
   if(!IsDATA||DataStream.Contains("DoubleMuon")){
     executeEventWithParameter(MakeParameter("mj"));
@@ -38,6 +33,12 @@ void FakeAnalyzer::executeDileptonEvent(){
     {Parameter p=MakeParameter("mm");
     p.SetAMuons(MuonMomentumCorrection(SMPGetMuons("POGMediumWithAntiLooseTrkIso",0.0,2.4),0,0));
     p.option+=" triggermatching strictorder";
+    executeEventWithParameter(p);}
+
+    {Parameter p=MakeParameter("mm","nobjetcleaning");
+    p.SetAMuons(MuonMomentumCorrection(SMPGetMuons("POGMediumWithAntiLooseTrkIso",0.0,2.4),0,0));
+    p.option+=" triggermatching strictorder";
+    p.prefix="nobjetcleaning/"+p.prefix;
     executeEventWithParameter(p);}
       
     executeEventWithParameter(MakeParameter("mM"));
@@ -79,73 +80,60 @@ void FakeAnalyzer::executeDileptonEvent(){
     {Parameter p=MakeParameter("ee");
     p.SetAElectrons(SMPGetElectrons("passMediumIDSideBand",0.0,2.5));
     p.option+=" triggermatching strictorder";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
-    {Parameter p=MakeParameter("eE");
-    UseSelectiveCharge(p);
+
+    {Parameter p=MakeParameter("ee","nobjetcleaning");
+    p.SetAElectrons(SMPGetElectrons("passMediumIDSideBand",0.0,2.5));
+    p.option+=" triggermatching strictorder";
+    p.prefix="nobjetcleaning/"+p.prefix;
     executeEventWithParameter(p);}
-    {Parameter p=MakeParameter("Ee");
-    UseSelectiveCharge(p);
-    executeEventWithParameter(p);}
-    {Parameter p=MakeParameter("EE");
-    UseSelectiveCharge(p);
-    executeEventWithParameter(p);}
+
+    executeEventWithParameter(MakeParameter("eE"));
+    executeEventWithParameter(MakeParameter("Ee"));
+    executeEventWithParameter(MakeParameter("EE"));
 
     {Parameter p=MakeParameter("eE");
     p.SetAElectrons(ToConePt(p.aelectrons));
     p.prefix+="cpt/";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
 
     {Parameter p=MakeParameter("Ee");
     p.SetAElectrons(ToConePt(p.aelectrons));
     p.prefix+="cpt/";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
 
     {Parameter p=MakeParameter("EE");
     p.SetAElectrons(ToConePt(p.aelectrons));
     p.prefix+="cpt/";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
 
     {Parameter p=MakeParameter("eE");
     p.SetAElectrons(ToModifiedPt(p.aelectrons));
     p.prefix+="mpt/";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
 
     {Parameter p=MakeParameter("Ee");
     p.SetAElectrons(ToModifiedPt(p.aelectrons));
     p.prefix+="mpt/";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
 
     {Parameter p=MakeParameter("EE");
     p.SetAElectrons(ToModifiedPt(p.aelectrons));
     p.prefix+="mpt/";
-    UseSelectiveCharge(p);
     executeEventWithParameter(p);}
   }
 }
 
 void FakeAnalyzer::FillHists(Parameter& p){
-  int n_bjet=0;
-  std::vector<Jet> jets=GetJets("tightLepVeto",40,2.4);
-  std::sort(jets.begin(),jets.end(),PtComparing);
-  for(const auto& jet:jets)
-    if(jet.GetTaggerResult(jtp.j_Tagger) > mcCorr->GetJetTaggingCutValue(jtp.j_Tagger, jtp.j_WP))
-      n_bjet++;
-
   if(GetSkimName()=="Dilepton"){
     TLorentzVector dilepton=(*p.lepton0)+(*p.lepton1);
     double dimass=dilepton.M();
     if(dimass>52){
-      if(n_bjet) FillDileptonHists(p,"nbjet/");
+      if(p.bjets.size()) FillDileptonHists(p,"nbjet/");
       else FillDileptonHists(p,"0bjet/");
       FillDileptonHists(p,"");
       if(dimass<76||dimass>106){
-	if(n_bjet) FillDileptonHists(p,"nbjet/noZ/");
+	if(p.bjets.size()) FillDileptonHists(p,"nbjet/noZ/");
 	else FillDileptonHists(p,"0bjet/noZ/");
 	FillDileptonHists(p,"noZ/");
       }
@@ -154,7 +142,7 @@ void FakeAnalyzer::FillHists(Parameter& p){
     std::vector<Jet> jets30=GetJets("tightLepVeto",30,2.4);
     std::sort(jets30.begin(),jets30.end(),PtComparing);
     if(jets30.size()&&fabs(jets30.at(0).DeltaPhi(*p.lepton0))>TMath::Pi()*2/3&&(jets30.at(0)+*p.lepton0).M()>50){
-      if(n_bjet) FillLeptonHists(p,"nbjet/");
+      if(p.bjets.size()) FillLeptonHists(p,"nbjet/");
       else FillLeptonHists(p,"0bjet/");
       FillLeptonHists(p,"");
     }
@@ -180,6 +168,16 @@ void FakeAnalyzer::FillDileptonHists(Parameter& p,TString region){
     FillHist(p.prefix+region+p.hprefix+"dimass_wide"+p.suffix+suf,dilepton.M(),weight,nmbin,mbins);
     FillHist(p.prefix+region+p.hprefix+"dipt"+p.suffix+suf,dilepton.Pt(),weight,100,0,100);
     FillHist(p.prefix+region+p.hprefix+"dirap"+p.suffix+suf,dilepton.Rapidity(),weight,60,-3,3);
+    if(p.bjets.size()){
+      FillHist(p.prefix+region+p.hprefix+"b0pt"+p.suffix+suf,p.bjets.at(0).Pt(),weight,100,0,200);
+      FillHist(p.prefix+region+p.hprefix+"b0eta"+p.suffix+suf,p.bjets.at(0).Eta(),weight,60,-3,3);
+      FillHist(p.prefix+region+p.hprefix+"drbl"+p.suffix+suf,TMath::Min(p.bjets.at(0).DeltaR(*p.lepton0),p.bjets.at(0).DeltaR(*p.lepton1)),weight,60,-3,3);      
+    }
+    if(p.jets.size()){
+      FillHist(p.prefix+region+p.hprefix+"j0pt"+p.suffix+suf,p.jets.at(0).Pt(),weight,100,0,200);
+      FillHist(p.prefix+region+p.hprefix+"j0eta"+p.suffix+suf,p.jets.at(0).Eta(),weight,60,-3,3);
+      FillHist(p.prefix+region+p.hprefix+"drjl"+p.suffix+suf,TMath::Min(p.jets.at(0).DeltaR(*p.lepton0),p.jets.at(0).DeltaR(*p.lepton1)),weight,60,-3,3);
+    }      
     for(int i=0,n=p.leptons.size();i<n;i++){
       double eta=fabs(p.leptons.at(i)->Eta());
       double pt=p.leptons.at(i)->Pt();
@@ -299,20 +297,6 @@ vector<Electron> FakeAnalyzer::ToModifiedPt(vector<Electron> electrons){
   }
   std::sort(electrons.begin(),electrons.end(),PtComparing);
   return electrons;
-}
-void FakeAnalyzer::UseSelectiveCharge(Parameter& p){
-  return; //temp
-  vector<Electron> electrons;
-  vector<Electron> aelectrons;
-  for(auto e:p.electrons){
-    if(e.IsGsfCtfScPixChargeConsistent()) electrons.push_back(e);
-  }
-  for(auto e:p.aelectrons){
-    if(e.IsGsfCtfScPixChargeConsistent()) aelectrons.push_back(e);
-  }
-  p.SetElectrons(electrons);
-  p.SetAElectrons(aelectrons);
-  p.k.electronIDSF2("Electron_SelQ_MediumID");
 }
 SMPAnalyzerCore::Parameter FakeAnalyzer::MakeParameter(TString channel,TString option){
   Parameter p=SMPAnalyzerCore::MakeParameter(channel,option);

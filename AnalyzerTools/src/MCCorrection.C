@@ -825,11 +825,11 @@ double MCCorrection::GetTopPtReweight(const std::vector<Gen>& gens){
   double pt_reweight = 1.;
   //==== if top pair is not found, return 1.
   //==== the measurement covers only the range pt(top)<=800GeV, otherwise, return 1.
-  if(toppt1<=800 && toppt2 <=800){
-    pt_reweight*=exp(0.0615-0.0005*toppt1);
-    pt_reweight*=exp(0.0615-0.0005*toppt2);
-    pt_reweight = sqrt(pt_reweight);
-  }
+  if(toppt1>500) toppt1=500;
+  if(toppt2>500) toppt2=500;
+  pt_reweight*=exp(0.0615-0.0005*toppt1);
+  pt_reweight*=exp(0.0615-0.0005*toppt2);
+  pt_reweight = sqrt(pt_reweight);
   return pt_reweight;
 }
 

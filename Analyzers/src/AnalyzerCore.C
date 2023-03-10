@@ -430,6 +430,7 @@ std::vector<Photon> AnalyzerCore::GetPhotons(TString id, double ptmin, double fe
 std::vector<Jet> AnalyzerCore::GetAllJets(){
 
   std::vector<Jet> out;
+  if(!jet_pt) return out;
   for(unsigned int i=0; i<jet_pt->size(); i++){
     Jet jet;
     jet.SetPtEtaPhiM(jet_pt->at(i), jet_eta->at(i), jet_phi->at(i), jet_m->at(i));

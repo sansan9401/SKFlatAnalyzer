@@ -5,3 +5,6 @@
 [submodule "external/TH4D"]
 	path = external/TH4D
 	url = https://github.com/sansan9401/TH4D
+[submodule "external/Aepcor"]
+	path = external/Aepcor
+	url = https://gitlab.cern.ch/hyseo/Aepcor.git

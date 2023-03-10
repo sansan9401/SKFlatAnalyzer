@@ -11,6 +11,9 @@ SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLL_powheg -n 20 -e 2016a
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLJ_powheg -n 20 -e 2016a
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_top_NoFullyHad -n 5 -e 2016a
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_antitop_NoFullyHad -n 5 -e 2016a
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_top_Incl -n 5 -e 2016a
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_antitop_Incl -n 5 -e 2016a
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_sch_Lep -n 5 -e 2016a
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i GGToLL -n 5 -e 2016a
 
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i DYJetsToMuMu_MiNNLO -n 40 -e 2016b
@@ -26,6 +29,9 @@ SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLL_powheg -n 20 -e 2016b
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLJ_powheg -n 20 -e 2016b
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_top_NoFullyHad -n 5 -e 2016b
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_antitop_NoFullyHad -n 5 -e 2016b
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_top_Incl -n 5 -e 2016b
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_antitop_Incl -n 5 -e 2016b
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_sch_Lep -n 5 -e 2016b
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i GGToLL -n 5 -e 2016b
 
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i DYJetsToMuMu_MiNNLO -n 40 -e 2017
@@ -41,6 +47,9 @@ SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLL_powheg -n 20 -e 2017
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLJ_powheg -n 20 -e 2017
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_top_NoFullyHad -n 5 -e 2017
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_antitop_NoFullyHad -n 5 -e 2017
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_top_Incl -n 5 -e 2017
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_antitop_Incl -n 5 -e 2017
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_sch_Lep -n 5 -e 2017
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i GGToLL -n 5 -e 2017
 
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i DYJetsToMuMu_MiNNLO -n 40 -e 2018
@@ -56,6 +65,9 @@ SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLL_powheg -n 30 -e 2018
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i TTLJ_powheg -n 30 -e 2018
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_top_NoFullyHad -n 5 -e 2018
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tW_antitop_NoFullyHad -n 5 -e 2018
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_top_Incl -n 5 -e 2018
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_tch_antitop_Incl -n 5 -e 2018
+SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i SingleTop_sch_Lep -n 5 -e 2018
 SKFlat.py -a FakeAnalyzer --skim SkimTree_Dilepton -i GGToLL -n 5 -e 2018
 
 

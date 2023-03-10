@@ -26,6 +26,7 @@ public:
     TString prefix,hprefix,suffix;
     vector<TString> triggers;
     vector<Gen> gens;
+    vector<Jet> jets;
     vector<Jet> bjets;
     vector<Muon> muons;
     vector<Electron> electrons;
@@ -235,6 +236,8 @@ public:
     return a;
   }
   
+  // Top pt weight
+  double GetTopPtReweight2(const std::vector<Gen>& gens);
 
   // ZptWeight
   void SetupZptWeight();

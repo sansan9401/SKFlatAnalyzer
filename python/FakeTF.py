@@ -97,7 +97,7 @@ if __name__=="__main__":
         for channel in args_raw.channel:
             for region in args_raw.region:
                 args=copy.deepcopy(args_raw)
-                args.plotter=ROOT.SKFlatPlotter("FakeAnalyzer","data-mi-tau_mi-wjets-vv-tttw-aa")
+                args.plotter=ROOT.SKFlatPlotter("data-mi-tau_mi-wjets-vv-tt-st-aa","FakeAnalyzer")
                 args.era=GetEra(era)
                 args.erashort=GetEraShort(era)
                 if args.era not in ["2016preVFP","2016postVFP","2017","2018"]:
